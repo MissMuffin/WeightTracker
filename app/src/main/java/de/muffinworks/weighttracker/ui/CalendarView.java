@@ -173,8 +173,8 @@ public class CalendarView extends LinearLayout {
             if (!DateUtil.compareMonth(date, today) || !DateUtil.compareYear(date, today))
             {
                 // if this day is outside current month, grey it out
-//                ((TextView)view).setTextColor(getResources().getColor(R.color.greyed_out, null)); //???
-                dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.greyed_out)); //???
+                dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.greyed_out));
+                weightTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.greyed_out_darker));
             }
             else if (DateUtil.compareDay(date, today))
             {
