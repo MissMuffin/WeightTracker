@@ -13,7 +13,10 @@ import android.view.ViewGroup;
 import android.view.WindowManager;
 import android.widget.EditText;
 
+import java.util.Date;
+
 import de.muffinworks.weighttracker.R;
+import de.muffinworks.weighttracker.util.DateUtil;
 
 /**
  * Created by Bianca on 01.03.2016.
@@ -21,13 +24,16 @@ import de.muffinworks.weighttracker.R;
 public class WeightDialogFragment extends DialogFragment {
 
     public interface WeightDialogListener {
-        void onDialogPositiveClick(DialogFragment dialog, double input);
+        void onDialogPositiveClick(DialogFragment dialog, Date date, double input);
         void onDialogNegativeClick(DialogFragment dialog);
         void onDialogDismiss(DialogFragment dialog);
     }
 
-    WeightDialogListener mListener;
-    EditText editTextWeight;
+    private WeightDialogListener mListener;
+    private EditText editTextWeight;
+    private String oldInput = "";
+    private Date date = DateUtil.currentDate();
+
 
     @Override
     public void onAttach(Activity activity) {
@@ -46,6 +52,9 @@ public class WeightDialogFragment extends DialogFragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         //open soft keyboard automatically
         getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        //set existing weight
+        editTextWeight.setText(oldInput);
+
         return super.onCreateView(inflater, container, savedInstanceState);
     }
 
@@ -61,10 +70,10 @@ public class WeightDialogFragment extends DialogFragment {
                     public void onClick(DialogInterface dialog, int id) {
                         String input = getEditTextInput();
                         double weight = -1;
-                        if (input.matches("((^[.][0-9]+|^[0-9]+[.]?([0-9]+)?))")) {
+                        if (input.matches("(^[.][0-9]+|^[0-9]+[.]?([0-9]+)?)") && !input.equals(oldInput)) {
                             weight = Double.parseDouble(input);
                         }
-                        mListener.onDialogPositiveClick(WeightDialogFragment.this, weight);
+                        mListener.onDialogPositiveClick(WeightDialogFragment.this, date, weight);
                     }
                 })
                 .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
@@ -78,6 +87,14 @@ public class WeightDialogFragment extends DialogFragment {
 
     private String getEditTextInput() {
         return editTextWeight.getText().toString();
+    }
+
+    public void setWeight(String s) {
+        this.oldInput = s;
+    }
+
+    public void setDate(Date date) {
+        this.date = date;
     }
 
     @Override

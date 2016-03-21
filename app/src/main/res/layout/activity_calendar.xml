@@ -23,6 +23,7 @@
     </android.support.design.widget.AppBarLayout>
 
     <de.muffinworks.weighttracker.ui.CalendarView
+        android:layout_marginTop="?attr/actionBarSize"
         android:id="@+id/calendar_view"
         app:dateFormat="MMMM yyyy"
         android:layout_width="match_parent"

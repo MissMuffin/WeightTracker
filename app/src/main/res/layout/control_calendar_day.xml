@@ -1,10 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:minHeight="35dp"
-    android:gravity="center"
-    android:textAppearance="@android:style/TextAppearance.Medium"
-    android:textAlignment="center"
-    android:text="00"/>
+    android:orientation="vertical"
+    android:paddingTop="5dp"
+    android:background="@drawable/border_top">
+
+    <TextView
+        android:id="@+id/date_text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textSize="10sp"
+        android:textAlignment="gravity"
+        android:padding="2dp"
+        android:text="00"/>
+
+    <TextView
+        android:id="@+id/weight_text"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:paddingLeft="2dp"
+        android:minHeight="45dp"
+        android:textSize="13sp"
+        android:textColor="#262626"
+        android:textAlignment="gravity"
+        android:text="100.6\nkg"/>
+
+</LinearLayout>
+

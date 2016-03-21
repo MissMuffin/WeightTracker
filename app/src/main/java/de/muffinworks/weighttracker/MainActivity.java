@@ -23,6 +23,7 @@ import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import de.muffinworks.weighttracker.db.Weight;
@@ -81,7 +82,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         mGraph = (GraphView) findViewById(R.id.graph);
-        LineGraphSeries<DataPoint> series = new LineGraphSeries<DataPoint>(values);
+        LineGraphSeries<DataPoint> series = new LineGraphSeries<>(values);
         mGraph.addSeries(series);
 
         // set date label formatter
@@ -126,7 +127,7 @@ public class MainActivity extends AppCompatActivity
     private void initCurrentWeight() {
         mCurrentWeight = (TextView) findViewById(R.id.currentDayWeight);
         Weight current = dbService.get(DateUtil.currentDate());
-        String currentWeightString= "";
+        String currentWeightString;
 
         if (current != null) {
             currentWeightString = current.getKilos()+" kg";
@@ -180,10 +181,10 @@ public class MainActivity extends AppCompatActivity
 
    //DIALOG LISTENER
     @Override
-    public void onDialogPositiveClick(DialogFragment dialog, double weight) {
+    public void onDialogPositiveClick(DialogFragment dialog, Date date, double weight) {
         if (weight==-1) return; //empty input
-        dbService.putWeightEntry(new Weight(DateUtil.currentDate(), weight));
-        mCurrentWeight.setText(dbService.get(DateUtil.currentDate()).getKilos() + " kg");
+        dbService.putWeightEntry(new Weight(date, weight));
+        mCurrentWeight.setText(dbService.get(date).getKilos() + " kg");
         mCurrentWeight.setTextSize(TypedValue.COMPLEX_UNIT_PT, 25);
 
         showToast("Added weight to db: " + weight);

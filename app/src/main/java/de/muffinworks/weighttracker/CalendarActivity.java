@@ -1,11 +1,17 @@
 package de.muffinworks.weighttracker;
 
+import android.app.DialogFragment;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.NavUtils;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.TypedValue;
 import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.text.DateFormat;
@@ -17,21 +23,40 @@ import java.util.List;
 import de.muffinworks.weighttracker.db.Weight;
 import de.muffinworks.weighttracker.db.WeightDbService;
 import de.muffinworks.weighttracker.ui.CalendarView;
+import de.muffinworks.weighttracker.ui.WeightDialogFragment;
+import de.muffinworks.weighttracker.util.DateUtil;
 
-public class CalendarActivity extends AppCompatActivity {
+public class CalendarActivity extends AppCompatActivity
+        implements WeightDialogFragment.WeightDialogListener {
 
     private Toolbar mToolbar;
     private CalendarView mCal;
     private List<Weight> entries;
     private WeightDbService dbService;
+    private WeightDialogFragment mDialog;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calendar);
+
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(mToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN) {
+            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Toast.makeText(CalendarActivity.this, "Up clicked",
+                            Toast.LENGTH_SHORT).show();
+                    NavUtils.navigateUpFromSameTask(CalendarActivity.this);
+                }
+            });
+        }
 
         dbService = new WeightDbService(this);
         entries = dbService.getAllEntries();
@@ -42,11 +67,45 @@ public class CalendarActivity extends AppCompatActivity {
         //assign event handler
         mCal.setEventHandler(new CalendarView.EventHandler() {
             @Override
-            public void onDayClick(Date date) {
-                DateFormat df = SimpleDateFormat.getDateInstance();
-                Toast.makeText(CalendarActivity.this, df.format(date), Toast.LENGTH_SHORT).show();
+            public void onDayClick(Date date, TextView weightView) {
+                showWeightDialog(date, weightView.getText().toString());
             }
         });
+
+        //TODO add back arrow for level up
     }
+
+    private void updateCalenderAfterChange(){
+        entries = dbService.getAllEntries();
+        mCal.updateCalendar(entries);
+    }
+
+    @Override
+    protected void onDestroy() {
+        dbService.close();
+        super.onDestroy();
+    }
+
+    //DIALOG STUFF
+    private void showWeightDialog(Date date, String weight) {
+        mDialog = new WeightDialogFragment();
+        mDialog.setWeight(weight);
+        mDialog.setDate(date);
+        mDialog.show(getFragmentManager(), "weight");
+    }
+
+    //DIALOG LISTENER
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog, Date date, double weight) {
+        if (weight==-1) return; //empty input
+        dbService.putWeightEntry(new Weight(date, weight));
+        updateCalenderAfterChange();
+    }
+
+    public void onDialogNegativeClick(DialogFragment dialog) {
+        dialog.getDialog().cancel();
+    }
+
+    public void onDialogDismiss(DialogFragment dialog) {}
 
 }

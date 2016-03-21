@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">WeightTracker</string>
+    <string name="app_name">Weight Tracker</string>
     <string name="action_settings">Settings</string>
-    <string name="title_activity_calendar">CalendarActivity</string>
+    <string name="title_activity_calendar">Calendar</string>
 </resources>

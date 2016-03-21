@@ -22,6 +22,7 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import de.muffinworks.weighttracker.R;
 import de.muffinworks.weighttracker.db.Weight;
@@ -40,7 +41,6 @@ public class CalendarView extends LinearLayout {
     private List<Weight> entries = null;
 
     // internal components
-    private LinearLayout header;
     private ImageView btnPrev;
     private ImageView btnNext;
     private TextView txtDate;
@@ -75,7 +75,6 @@ public class CalendarView extends LinearLayout {
 
     private void assignUiElements() {
         //assign local variables to components after layout is infalted
-        header = (LinearLayout)findViewById(R.id.calendar_header);
         btnPrev = (ImageView)findViewById(R.id.calendar_prev_button);
         btnNext = (ImageView)findViewById(R.id.calendar_next_button);
         txtDate = (TextView)findViewById(R.id.calendar_date_display);
@@ -103,7 +102,7 @@ public class CalendarView extends LinearLayout {
                 if (eventHandler == null) {
                     return;
                 }
-                eventHandler.onDayClick((Date) parent.getItemAtPosition(position));
+                eventHandler.onDayClick((Date)parent.getItemAtPosition(position), (TextView)view.findViewById(R.id.weight_text));
             }
         });
     }
@@ -135,7 +134,7 @@ public class CalendarView extends LinearLayout {
         grid.setAdapter(new CalendarAdapter(getContext(), cells, entries));
 
         //update title
-        SimpleDateFormat sdf = new SimpleDateFormat(dateFormat);
+        SimpleDateFormat sdf = new SimpleDateFormat(dateFormat, Locale.getDefault());
         txtDate.setText(sdf.format(currentDate.getTime()));
     }
 
@@ -164,33 +163,43 @@ public class CalendarView extends LinearLayout {
             if (view == null) {
                 view = inflater.inflate(R.layout.control_calendar_day, parent, false);
             }
+            TextView dateTextView = (TextView)view.findViewById(R.id.date_text);
+            TextView weightTextView = (TextView)view.findViewById(R.id.weight_text);
 
             // clear styling
-            ((TextView)view).setTypeface(null, Typeface.NORMAL);
-            ((TextView)view).setTextColor(Color.BLACK);
+            dateTextView.setTypeface(null, Typeface.NORMAL);
+            dateTextView.setTextColor(Color.BLACK);
 
             if (!DateUtil.compareMonth(date, today) || !DateUtil.compareYear(date, today))
             {
                 // if this day is outside current month, grey it out
 //                ((TextView)view).setTextColor(getResources().getColor(R.color.greyed_out, null)); //???
-                ((TextView)view).setTextColor(ContextCompat.getColor(getContext(), R.color.greyed_out)); //???
+                dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.greyed_out)); //???
             }
             else if (DateUtil.compareDay(date, today))
             {
                 // if it is today, set it to blue/bold
-                ((TextView)view).setTypeface(null, Typeface.BOLD);
-                ((TextView)view).setTextColor(getResources().getColor(R.color.today));
+                dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.today));
+                dateTextView.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.circle_today));
             }
 
             // set text
-            ((TextView)view).setText(String.valueOf(DateUtil.getDayOfMonth(date)));
+            dateTextView.setText(String.valueOf(DateUtil.getDayOfMonth(date)));
+            //measure height of textview and then set dimens so that view is square
+            //otherwise background circle will be scaled
+            dateTextView.measure(0, 0);
+            int dimens = dateTextView.getMeasuredHeight();
+            LinearLayout.LayoutParams test = new LinearLayout.LayoutParams(dimens, dimens);
+            dateTextView.setLayoutParams(test);
 
             //if this day has a weight
             if (entries != null) {
                 //arraylist is sorted by date integer in db
                 int index = Collections.binarySearch(entries, new Weight(date));
                 if (index > 0) {
-                    ((TextView)view).setTextColor(Color.CYAN);
+                    weightTextView.setText(Double.toString(entries.get(index).getKilos()));
+                } else {
+                    weightTextView.setText("");
                 }
             }
 
@@ -209,6 +218,6 @@ public class CalendarView extends LinearLayout {
      */
     public interface EventHandler
     {
-        void onDayClick(Date date);
+        void onDayClick(Date date, TextView weightView);
     }
 }

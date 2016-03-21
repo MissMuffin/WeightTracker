@@ -4,6 +4,11 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF4081</color>
 
-    <color name="today">#4b82ff</color>
+    <color name="today">#f7f7f7</color>
     <color name="greyed_out">#c7c7c7</color>
+
+
+    <color name="selectorCalendarActive">#92d290</color>
+    <color name="transparent">#00000000</color>
+    <color name="selectorCalendarSelected">#64b7d0da</color>
 </resources>
