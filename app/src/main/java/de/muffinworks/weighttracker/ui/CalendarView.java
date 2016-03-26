@@ -198,7 +198,7 @@ public class CalendarView extends LinearLayout {
                 //arraylist is sorted by date integer in db
                 int index = Collections.binarySearch(entries, new Weight(date));
                 if (index > 0) {
-                    weightTextView.setText(Double.toString(entries.get(index).getKilos()));
+                    weightTextView.setText(Double.toString(entries.get(index).getKilos())+"\nkg");
                 } else {
                     weightTextView.setText("");
                 }

@@ -55,6 +55,7 @@ public class WeightDialogFragment extends DialogFragment {
     @Override
     public void onStart() {
         super.onStart();
+        //get reference to button obj
         posButton = alert.getButton(DialogInterface.BUTTON_POSITIVE);
         posButton.setEnabled(false);
     }
@@ -86,6 +87,7 @@ public class WeightDialogFragment extends DialogFragment {
 
             @Override
             public void afterTextChanged(Editable s) {
+                //enable submit button after input has been changed
                 posButton.setEnabled(true);
             }
         });
