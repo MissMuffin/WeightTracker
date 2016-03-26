@@ -17,18 +17,36 @@
         android:padding="2dp"
         android:text="00"/>
 
-    <TextView
-        android:id="@+id/weight_text"
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:gravity="center"
         android:paddingLeft="2dp"
         android:minHeight="45dp"
-        android:textSize="13sp"
-        android:textColor="#262626"
-        android:textAlignment="gravity"
-        android:text="100.6\nkg"/>
+        android:orientation="vertical"
+        android:gravity="center">
 
+        <TextView
+            android:id="@+id/weight_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center|bottom"
+            android:textSize="13sp"
+            android:textColor="#262626"
+            android:textAlignment="gravity"
+            android:text="100.6"/>
+
+        <TextView
+            android:id="@+id/weight_unit_text"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center|top"
+            android:textAlignment="gravity"
+            android:layout_marginTop="-3dp"
+            android:textSize="11sp"
+            android:textColor="#4d4d4d"
+            android:text="kg"/>
+
+    </LinearLayout>
 </LinearLayout>
 

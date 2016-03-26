@@ -36,7 +36,7 @@ public class CalendarView extends LinearLayout {
     private static final int DAYS_COUNT = 42;
     private static final String DATE_FORMAT = "Calender View";
     private String dateFormat;
-    private Calendar currentDate = Calendar.getInstance();
+    private Calendar currentDate = Calendar.getInstance(Locale.getDefault());
     private EventHandler eventHandler = null;
     private List<Weight> entries = null;
 
@@ -153,7 +153,7 @@ public class CalendarView extends LinearLayout {
         public View getView(int position, View view, ViewGroup parent) {
             //day in question
             Date date = getItem(position);
-            Calendar c = Calendar.getInstance();
+            Calendar c = Calendar.getInstance(Locale.getDefault());
             c.setTime(date);
 
             //today
@@ -165,6 +165,7 @@ public class CalendarView extends LinearLayout {
             }
             TextView dateTextView = (TextView)view.findViewById(R.id.date_text);
             TextView weightTextView = (TextView)view.findViewById(R.id.weight_text);
+            TextView weightUnitTextView = (TextView)view.findViewById(R.id.weight_unit_text);
 
             // clear styling
             dateTextView.setTypeface(null, Typeface.NORMAL);
@@ -175,6 +176,7 @@ public class CalendarView extends LinearLayout {
                 // if this day is outside currently selected month, grey it out
                 dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.light_gray));
                 weightTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.gray));
+                weightUnitTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.gray));
             }
 
             if (DateUtil.compare(date, today))
@@ -197,10 +199,12 @@ public class CalendarView extends LinearLayout {
             if (entries != null) {
                 //arraylist is sorted by date integer in db
                 int index = Collections.binarySearch(entries, new Weight(date));
-                if (index > 0) {
-                    weightTextView.setText(Double.toString(entries.get(index).getKilos())+"\nkg");
+                if (index >= 0) {
+                    weightTextView.setText(Double.toString(entries.get(index).getKilos()));
+                    weightUnitTextView.setVisibility(VISIBLE);
                 } else {
                     weightTextView.setText("");
+                    weightUnitTextView.setVisibility(INVISIBLE);
                 }
             }
 

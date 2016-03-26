@@ -2,13 +2,14 @@ package de.muffinworks.weighttracker.util;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.Locale;
 
 /**
  * Created by Bianca on 18.03.2016.
  */
 public class DateUtil {
 
-    private static Calendar c = Calendar.getInstance();
+    private static Calendar c = Calendar.getInstance(Locale.getDefault());
     private static final int[] CALENDAR_FIELDS = {
             Calendar.YEAR,
             Calendar.MONTH,
@@ -33,7 +34,7 @@ public class DateUtil {
     }
 
     public static Date currentDate() {
-        return Calendar.getInstance().getTime();
+        return Calendar.getInstance(Locale.getDefault()).getTime();
     }
 
     public static boolean compareMonth(Date d1, Date d2) {
