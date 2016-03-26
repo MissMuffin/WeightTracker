@@ -7,10 +7,13 @@ import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.EditText;
 
 import java.util.Date;
@@ -33,6 +36,8 @@ public class WeightDialogFragment extends DialogFragment {
     private EditText editTextWeight;
     private String oldInput = "";
     private Date date = DateUtil.currentDate();
+    private AlertDialog alert;
+    private Button posButton;
 
 
     @Override
@@ -47,13 +52,43 @@ public class WeightDialogFragment extends DialogFragment {
         }
     }
 
+    @Override
+    public void onStart() {
+        super.onStart();
+        posButton = alert.getButton(DialogInterface.BUTTON_POSITIVE);
+        posButton.setEnabled(false);
+    }
+
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         //open soft keyboard automatically
         getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+
         //set existing weight
         editTextWeight.setText(oldInput);
+        moveCursorToEnd();
+
+        //add textwatcher to limit ipnut of more than 3 digits before period
+        editTextWeight.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (s.toString().matches("^[0-9]{4,}([.])?(.+)?")) {
+                    editTextWeight.setError("Weight should be below 1000 for living humans");
+                } else {
+                    editTextWeight.setError(null);
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                posButton.setEnabled(true);
+            }
+        });
 
         return super.onCreateView(inflater, container, savedInstanceState);
     }
@@ -70,7 +105,7 @@ public class WeightDialogFragment extends DialogFragment {
                     public void onClick(DialogInterface dialog, int id) {
                         String input = getEditTextInput();
                         double weight = -1;
-                        if (input.matches("(^[.][0-9]+|^[0-9]+[.]?([0-9]+)?)") && !input.equals(oldInput)) {
+                        if (input.matches("(^[.][0-9]+|^[0-9]+[.]?([0-9]+)?)")) {
                             weight = Double.parseDouble(input);
                         }
                         mListener.onDialogPositiveClick(WeightDialogFragment.this, date, weight);
@@ -81,8 +116,8 @@ public class WeightDialogFragment extends DialogFragment {
                         mListener.onDialogNegativeClick(WeightDialogFragment.this);
                     }
                 });
-
-        return builder.create();
+        alert = builder.create();
+        return alert;
     }
 
     private String getEditTextInput() {
@@ -95,6 +130,10 @@ public class WeightDialogFragment extends DialogFragment {
 
     public void setDate(Date date) {
         this.date = date;
+    }
+
+    public void moveCursorToEnd() {
+        editTextWeight.setSelection(editTextWeight.getText().toString().length());
     }
 
     @Override

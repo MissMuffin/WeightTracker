@@ -22,7 +22,10 @@
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_gravity="left|center_vertical"
-            android:src="@drawable/previous_icon"/>
+            android:tint="#606060"
+            android:rotation="180"
+            android:background="@drawable/button_pressed_bg"
+            android:src="@drawable/ic_navigate_next_black_24dp"/>
 
         <!-- date title -->
         <TextView
@@ -42,7 +45,9 @@
             android:layout_width="30dp"
             android:layout_height="30dp"
             android:layout_gravity="right|center_vertical"
-            android:src="@drawable/next_icon"/>
+            android:tint="#606060"
+            android:background="@drawable/button_pressed_bg"
+            android:src="@drawable/ic_navigate_next_black_24dp"/>
     </LinearLayout>
 
     <!-- days header -->

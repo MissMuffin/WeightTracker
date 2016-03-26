@@ -2,7 +2,6 @@ package de.muffinworks.weighttracker.util;
 
 import java.util.Calendar;
 import java.util.Date;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Created by Bianca on 18.03.2016.
@@ -10,6 +9,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public class DateUtil {
 
     private static Calendar c = Calendar.getInstance();
+    private static final int[] CALENDAR_FIELDS = {
+            Calendar.YEAR,
+            Calendar.MONTH,
+            Calendar.DAY_OF_MONTH
+        };
 
     public static Date getDateFromInteger(int date) {
         String s = date+"";
@@ -33,30 +37,44 @@ public class DateUtil {
     }
 
     public static boolean compareMonth(Date d1, Date d2) {
-        Calendar c1 = (Calendar)c.clone();
-        c1.setTime(d1);
-        Calendar c2 = (Calendar)c.clone();
-        c2.setTime(d2);
-
-        return  c1.get(Calendar.MONTH) == c2.get(Calendar.MONTH);
+       return  compare(d1, d2, Calendar.MONTH);
     }
 
     public static boolean compareYear(Date d1, Date d2) {
-        Calendar c1 = (Calendar)c.clone();
-        c1.setTime(d1);
-        Calendar c2 = (Calendar)c.clone();
-        c2.setTime(d2);
-
-        return  c1.get(Calendar.YEAR) == c2.get(Calendar.YEAR);
+       return  compare(d1, d2, Calendar.YEAR);
     }
 
     public static boolean compareDay(Date d1, Date d2) {
-        Calendar c1 = (Calendar)c.clone();
-        c1.setTime(d1);
-        Calendar c2 = (Calendar)c.clone();
-        c2.setTime(d2);
+        return  compare(d1, d2, Calendar.DAY_OF_MONTH);
+    }
 
-        return  c1.get(Calendar.DAY_OF_MONTH) == c2.get(Calendar.DAY_OF_MONTH);
+    private static boolean compare(Date d1, Date d2, int field) {
+        if (checkValidField(field)) {
+            Calendar c1 = (Calendar)c.clone();
+            c1.setTime(d1);
+            Calendar c2 = (Calendar)c.clone();
+            c2.setTime(d2);
+            return c1.get(field) == c2.get(field);
+        }
+        return false;
+    }
+
+    public static boolean compare(Date d1, Date d2) {
+        boolean year = compare(d1, d2, Calendar.YEAR);
+        boolean month = compare(d1, d2, Calendar.MONTH);
+        boolean day = compare(d1, d2, Calendar.DAY_OF_MONTH);
+        return (
+                compare(d1, d2, Calendar.YEAR)
+                && compare(d1, d2, Calendar.MONTH)
+                && compare(d1, d2, Calendar.DAY_OF_MONTH)
+                );
+    }
+
+    private static boolean checkValidField(int field) {
+        for (int val : CALENDAR_FIELDS) {
+            if (field == val) return true;
+        }
+        return false;
     }
 
     public static int getDayOfMonth(Date d) {

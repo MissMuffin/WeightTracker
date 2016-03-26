@@ -170,16 +170,17 @@ public class CalendarView extends LinearLayout {
             dateTextView.setTypeface(null, Typeface.NORMAL);
             dateTextView.setTextColor(Color.BLACK);
 
-            if (!DateUtil.compareMonth(date, today) || !DateUtil.compareYear(date, today))
+            if (!DateUtil.compareMonth(date, currentDate.getTime()) || !DateUtil.compareYear(date, currentDate.getTime()))
             {
-                // if this day is outside current month, grey it out
-                dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.greyed_out));
-                weightTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.greyed_out_darker));
+                // if this day is outside currently selected month, grey it out
+                dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.light_gray));
+                weightTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.gray));
             }
-            else if (DateUtil.compareDay(date, today))
+
+            if (DateUtil.compare(date, today))
             {
-                // if it is today, set it to blue/bold
-                dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.today));
+                // if it is today, set it to blue background & white font
+                dateTextView.setTextColor(ContextCompat.getColor(getContext(), R.color.offwhite));
                 dateTextView.setBackground(ContextCompat.getDrawable(getContext(), R.drawable.circle_today));
             }
 

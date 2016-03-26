@@ -41,6 +41,7 @@ public class MainActivity extends AppCompatActivity
     private Spinner mSpinner;
     private GraphView mGraph;
     private TextView mCurrentTime;
+    private Weight mTodayWeight;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -126,16 +127,8 @@ public class MainActivity extends AppCompatActivity
 
     private void initCurrentWeight() {
         mCurrentWeight = (TextView) findViewById(R.id.currentDayWeight);
-        Weight current = dbService.get(DateUtil.currentDate());
-        String currentWeightString;
 
-        if (current != null) {
-            currentWeightString = current.getKilos()+" kg";
-        }else{
-            currentWeightString = "Click to enter \nyour current weight";
-            mCurrentWeight.setTextSize(25);
-        }
-        mCurrentWeight.setText(currentWeightString);
+        updateCurrentWeightText();
 
         mCurrentWeight.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -143,6 +136,17 @@ public class MainActivity extends AppCompatActivity
                 showWeightDialog();
             }
         });
+    }
+
+    private void updateCurrentWeightText() {
+        mTodayWeight = dbService.get(DateUtil.currentDate());
+        if (mTodayWeight != null) {
+            mCurrentWeight.setText(mTodayWeight.getKilos() + " kg");
+            mCurrentWeight.setTextSize(TypedValue.COMPLEX_UNIT_PT, 25);
+        } else {
+            mCurrentWeight.setText("Click to enter \nyour weight for today");
+            mCurrentWeight.setTextSize(25);
+        }
     }
 
     //NECESSARY ANDROID SYSTEM STUFF
@@ -176,18 +180,19 @@ public class MainActivity extends AppCompatActivity
     //DIALOG STUFF
     private void showWeightDialog() {
         mDialog = new WeightDialogFragment();
+        if (mTodayWeight != null) mDialog.setWeight(Double.toString(mTodayWeight.getKilos()));
         mDialog.show(getFragmentManager(), "weight");
     }
 
    //DIALOG LISTENER
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, Date date, double weight) {
-        if (weight==-1) return; //empty input
-        dbService.putWeightEntry(new Weight(date, weight));
-        mCurrentWeight.setText(dbService.get(date).getKilos() + " kg");
-        mCurrentWeight.setTextSize(TypedValue.COMPLEX_UNIT_PT, 25);
-
-        showToast("Added weight to db: " + weight);
+        if (weight==-1) {
+            dbService.deleteEntry(date); //empty input
+        } else {
+            dbService.putWeightEntry(new Weight(date, weight));
+        }
+        updateCurrentWeightText();
     }
 
     public void onDialogNegativeClick(DialogFragment dialog) {

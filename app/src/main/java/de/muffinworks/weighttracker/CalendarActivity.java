@@ -41,22 +41,7 @@ public class CalendarActivity extends AppCompatActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_calendar);
 
-        mToolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(mToolbar);
-        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-        getSupportActionBar().setDisplayShowHomeEnabled(true);
-        getSupportActionBar().setHomeButtonEnabled(true);
-
-        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN) {
-            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    Toast.makeText(CalendarActivity.this, "Up clicked",
-                            Toast.LENGTH_SHORT).show();
-                    NavUtils.navigateUpFromSameTask(CalendarActivity.this);
-                }
-            });
-        }
+        initToolbar();
 
         dbService = new WeightDbService(this);
         entries = dbService.getAllEntries();
@@ -71,13 +56,39 @@ public class CalendarActivity extends AppCompatActivity
                 showWeightDialog(date, weightView.getText().toString());
             }
         });
+    }
 
-        //TODO add back arrow for level up
+    private void initToolbar() {
+        mToolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(mToolbar);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setDisplayShowHomeEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+
+        //TODO test on API 17, 18, 19
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN) {
+            mToolbar.setNavigationOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    Toast.makeText(CalendarActivity.this, "Up clicked",
+                            Toast.LENGTH_SHORT).show();
+                    NavUtils.navigateUpFromSameTask(CalendarActivity.this);
+                }
+            });
+        }
+
     }
 
     private void updateCalenderAfterChange(){
         entries = dbService.getAllEntries();
         mCal.updateCalendar(entries);
+    }
+
+    //android system stuff
+    @Override
+    public void onBackPressed() {
+        //calling on finish to emulate same behaviour as on home up button press to call oncreateview in parent
+        NavUtils.navigateUpFromSameTask(CalendarActivity.this);
     }
 
     @Override
@@ -97,8 +108,11 @@ public class CalendarActivity extends AppCompatActivity
     //DIALOG LISTENER
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, Date date, double weight) {
-        if (weight==-1) return; //empty input
-        dbService.putWeightEntry(new Weight(date, weight));
+        if (weight==-1) {
+            dbService.deleteEntry(date); //empty input
+        } else {
+            dbService.putWeightEntry(new Weight(date, weight));
+        }
         updateCalenderAfterChange();
     }
 
