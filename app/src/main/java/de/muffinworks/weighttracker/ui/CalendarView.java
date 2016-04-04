@@ -99,7 +99,7 @@ public class CalendarView extends LinearLayout {
         grid.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                if (eventHandler == null) {
+                if (eventHandler == null || DateUtil.isFutureDate((Date)parent.getItemAtPosition(position))) {
                     return;
                 }
                 eventHandler.onDayClick((Date)parent.getItemAtPosition(position), (TextView)view.findViewById(R.id.weight_text));
