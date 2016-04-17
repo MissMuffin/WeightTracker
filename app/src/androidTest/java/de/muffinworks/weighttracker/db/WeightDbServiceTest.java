@@ -63,6 +63,14 @@ public class WeightDbServiceTest {
         assertThat(null, is(service.get(DateUtil.getDateFromInteger(20110022))));
     }
 
+    @Test
+    public void testHasFor() {
+        service.deleteEntry(DateUtil.currentDate());
+        assertThat(service.hasEntryFor(DateUtil.currentDate()), is(false));
+        service.putWeightEntry(new Weight(DateUtil.currentDate(), 123));
+        assertThat(service.hasEntryFor(DateUtil.currentDate()), is(true));
+    }
+
 
     @After
     public void tearDown() {
