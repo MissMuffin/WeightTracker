@@ -23,6 +23,19 @@
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme.NoActionBar"
             android:windowSoftInputMode="adjustPan"/>
+
+        <uses-permission android:name="com.android.alarm.permission.SET_ALARM"/>
+        <uses-permission android:name="com.android.alarm.permission.VIBRATE"/>
+
+        <service
+            android:name=".services.NotifyService"
+            android:label="NotifyService" >
+        </service>
+
+        <receiver
+            android:process=":remote"
+            android:name=".services.AlarmReceiver">
+        </receiver>
     </application>
 
 </manifest>

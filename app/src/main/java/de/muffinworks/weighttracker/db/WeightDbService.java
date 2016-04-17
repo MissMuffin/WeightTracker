@@ -161,6 +161,10 @@ public class WeightDbService {
         return cursorToList(cursor);
     }*/
 
+    public boolean hasEntryFor(Date date) {
+        return doesEntryExist(DateUtil.getDateInteger(date));
+    }
+
     public void deleteEntry(Date date) {
         int rowsAffected = db.delete(
                 WeightEntry.TABLE_NAME,
