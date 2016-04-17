@@ -115,18 +115,21 @@ public class MainActivity extends AppCompatActivity
         //display current week number, month name and year below in textview
         mCurrentTime = (TextView) findViewById(R.id.current_time_period);
 
+        mGraph = (GraphView) findViewById(R.id.graph);
+
         List<Weight> weights = getEntriesForSelectedTime();
+
+        mGraph.removeAllSeries();
         DataPoint[] values = new DataPoint[weights.size()];
 
         for(int i = 0; i < weights.size(); ++i) {
             Weight w = weights.get(i);
             values[i] = new DataPoint(w.getDate(), w.getKilos());
         }
-
-        mGraph = (GraphView) findViewById(R.id.graph);
         LineGraphSeries<DataPoint> series = new LineGraphSeries<>(values);
-        mGraph.removeAllSeries();
-        mGraph.addSeries(series);
+
+        if(weights.size() > 0)
+            mGraph.addSeries(series);
 
         // set date label formatter
         mGraph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(this));
@@ -219,12 +222,23 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             return true;
         }
-        if (id == R.id.settings_add_test_data) {
+        else if (id == R.id.settings_add_test_data) {
             // Create dummy data.
             dbService.createDummyEntries();
+            updateGraph();
+            updateCurrentWeightText();
             showSnackbar("Created dummy data!");
+            return true; // why return true?
+        }
+        else if(id == R.id.action_delete_data) {
+            dbService.clearAll();
+            updateGraph();
+            updateCurrentWeightText();
+            showSnackbar("Deleted all the data!");
             return true;
         }
+
+
 
         return super.onOptionsItemSelected(item);
     }

@@ -117,7 +117,7 @@ public class WeightDbService {
                 null);
         if(cursor.getCount()<1) {
             Log.w("DB SERVICE WARNING", "get query for date did not return anything");
-            return null;
+            return new ArrayList<>();
         }
         List<Weight> entries = new ArrayList<Weight>();
         cursor.moveToFirst();
@@ -160,6 +160,10 @@ public class WeightDbService {
         Cursor cursor = db.rawQuery("SELECT * FROM weight ORDER BY date", new String[] {});
         return cursorToList(cursor);
     }*/
+
+    public void clearAll() {
+        db.delete(WeightEntry.TABLE_NAME, "1 = 1", null);
+    }
 
     public void deleteEntry(Date date) {
         int rowsAffected = db.delete(
