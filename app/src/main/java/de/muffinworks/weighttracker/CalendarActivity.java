@@ -108,7 +108,7 @@ public class CalendarActivity extends AppCompatActivity
     //DIALOG LISTENER
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, Date date, double weight) {
-        if (weight==-1) {
+        if (weight <= 0) {
             dbService.deleteEntry(date); //empty input
         } else {
             dbService.putWeightEntry(new Weight(date, weight));

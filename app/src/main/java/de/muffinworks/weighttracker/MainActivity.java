@@ -67,8 +67,7 @@ public class MainActivity extends AppCompatActivity
         dbService = new WeightDbService(this);
         config = new ConfigUtil(this);
         selectedTimePeriod = config.getTimePeriod();
-        // Create dummy data.
-//        dbService.createDummyEntries();
+
 
         initCurrentWeight();
         initSpinner();
@@ -221,7 +220,9 @@ public class MainActivity extends AppCompatActivity
             return true;
         }
         if (id == R.id.settings_add_test_data) {
-            showSnackbar("TESST");
+            // Create dummy data.
+            dbService.createDummyEntries();
+            showSnackbar("Created dummy data!");
             return true;
         }
 
@@ -244,7 +245,7 @@ public class MainActivity extends AppCompatActivity
    //DIALOG LISTENER
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, Date date, double weight) {
-        if (weight==-1) {
+        if (weight <= 0) {
             dbService.deleteEntry(date); //empty input
         } else {
             dbService.putWeightEntry(new Weight(date, weight));
