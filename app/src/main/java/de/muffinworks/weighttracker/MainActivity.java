@@ -22,13 +22,14 @@ import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
 import com.jjoe64.graphview.series.DataPoint;
 import com.jjoe64.graphview.series.LineGraphSeries;
 
-import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
 import de.muffinworks.weighttracker.db.Weight;
 import de.muffinworks.weighttracker.db.WeightDbService;
 import de.muffinworks.weighttracker.ui.WeightDialogFragment;
+import de.muffinworks.weighttracker.util.ConfigUtil;
 import de.muffinworks.weighttracker.util.DateUtil;
 
 public class MainActivity extends AppCompatActivity
@@ -42,6 +43,9 @@ public class MainActivity extends AppCompatActivity
     private GraphView mGraph;
     private TextView mCurrentTime;
     private Weight mTodayWeight;
+
+    private ConfigUtil config;
+    private String selectedTimePeriod = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,47 +65,95 @@ public class MainActivity extends AppCompatActivity
         });
 
         dbService = new WeightDbService(this);
-        // Create dummy data.
-//        dbService.createDummyEntries();
+        config = new ConfigUtil(this);
+        selectedTimePeriod = config.getTimePeriod();
+
 
         initCurrentWeight();
         initSpinner();
-        initGraph();
+        updateGraph();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+    }
+
+    private List<Weight> getEntriesForSelectedTime() {
+        Date[] startEnd = getStartAndEndDatesForSelectedTime();
+
+        if(startEnd == null)
+            return dbService.getAllEntries();
+        return dbService.get(startEnd[0], startEnd[1]);
+    }
+
+    private Date[] getStartAndEndDatesForSelectedTime() {
+        Date today = DateUtil.currentDate();
+        Calendar c = Calendar.getInstance();
+        c.setTime(today);
+
+        selectedTimePeriod = (String) mSpinner.getSelectedItem();
+
+        switch(selectedTimePeriod) {
+            case "Week":
+                c.add(Calendar.DATE, -7);
+                return new Date[] { c.getTime(), today };
+            default:
+            case "Month":
+                c.add(Calendar.MONTH, -1);
+                return new Date[] { c.getTime(), today };
+            case "Year":
+                c.add(Calendar.YEAR, -1);
+                return new Date[] { c.getTime(), today };
+            case "All time":
+                return null;
+        }
     }
 
     //INIT STUFF
-    private void initGraph() {
+    private void updateGraph() {
         //display current week number, month name and year below in textview
         mCurrentTime = (TextView) findViewById(R.id.current_time_period);
 
-        List<DataPoint> pts = new ArrayList<>();
-            List<Weight> weights = dbService.getAllEntries();
-            DataPoint[] values = new DataPoint[weights.size()];
-            for(int i = 0; i < weights.size(); ++i) {
-                Weight w = weights.get(i);
-                values[i] = new DataPoint(w.getDate(), w.getKilos());
+        List<Weight> weights = getEntriesForSelectedTime();
+        DataPoint[] values = new DataPoint[weights.size()];
+
+        for(int i = 0; i < weights.size(); ++i) {
+            Weight w = weights.get(i);
+            values[i] = new DataPoint(w.getDate(), w.getKilos());
         }
 
         mGraph = (GraphView) findViewById(R.id.graph);
         LineGraphSeries<DataPoint> series = new LineGraphSeries<>(values);
+        mGraph.removeAllSeries();
         mGraph.addSeries(series);
 
         // set date label formatter
         mGraph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(this));
         mGraph.getGridLabelRenderer().setNumHorizontalLabels(3); // only 3 because of the space
 
-        // set manual x bounds to have nice steps
-        if(weights.size() > 0) {
-            Weight first = weights.get(0);
-            Weight last = weights.get(weights.size()-1);
-            mGraph.getViewport().setMinX(first.getDate().getTime());
-            mGraph.getViewport().setMaxX(last.getDate().getTime());
-            mGraph.getViewport().setXAxisBoundsManual(true);
-
-            mGraph.getViewport().setYAxisBoundsManual(true);
-            mGraph.getViewport().setMinY(60);
-            mGraph.getViewport().setMaxY(70);
+        Date[] startEnd = getStartAndEndDatesForSelectedTime();
+        mGraph.getViewport().setXAxisBoundsManual(true);
+        if(startEnd != null) {
+            mGraph.getViewport().setMinX(startEnd[0].getTime());
+            mGraph.getViewport().setMaxX(startEnd[1].getTime());
+        } else {
+            if(weights.size() > 1) {
+                Weight first = weights.get(0);
+                Weight last = weights.get(weights.size() - 1);
+                mGraph.getViewport().setMinX(first.getDate().getTime());
+                mGraph.getViewport().setMaxX(last.getDate().getTime());
+            } else {
+                Calendar c = Calendar.getInstance();
+                c.set(1992, 1, 11);
+                mGraph.getViewport().setMinX(c.getTime().getTime());
+                c.set(2052, 1, 11);
+                mGraph.getViewport().setMaxX(c.getTime().getTime());
+            }
         }
+
+        mGraph.getViewport().setYAxisBoundsManual(true);
+        mGraph.getViewport().setMinY(0);
     }
 
     private void initSpinner() {
@@ -110,12 +162,16 @@ public class MainActivity extends AppCompatActivity
                 R.array.time_period_array, android.R.layout.simple_spinner_item);
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
         mSpinner.setAdapter(adapter);
+        if(selectedTimePeriod != null)
+            mSpinner.setSelection(adapter.getPosition(selectedTimePeriod));
         mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 // An item was selected. You can retrieve the selected item using
                 // parent.getItemAtPosition(pos)
                 showToast(parent.getItemAtPosition(position).toString());
+                config.setTimePeriod((String) mSpinner.getSelectedItem());
+                updateGraph();
             }
 
             @Override
@@ -164,7 +220,9 @@ public class MainActivity extends AppCompatActivity
             return true;
         }
         if (id == R.id.settings_add_test_data) {
-            showSnackbar("TESST");
+            // Create dummy data.
+            dbService.createDummyEntries();
+            showSnackbar("Created dummy data!");
             return true;
         }
 
@@ -187,12 +245,13 @@ public class MainActivity extends AppCompatActivity
    //DIALOG LISTENER
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, Date date, double weight) {
-        if (weight==-1) {
+        if (weight <= 0) {
             dbService.deleteEntry(date); //empty input
         } else {
             dbService.putWeightEntry(new Weight(date, weight));
         }
         updateCurrentWeightText();
+        updateGraph();
     }
 
     public void onDialogNegativeClick(DialogFragment dialog) {
@@ -205,7 +264,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     //SPINNER ON ITEM CLICK HANDLING
-
 
     //LOGGING
     private void showToast(String msg) {
