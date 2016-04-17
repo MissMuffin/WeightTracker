@@ -161,8 +161,13 @@ public class WeightDbService {
         return cursorToList(cursor);
     }*/
 
+
     public void clearAll() {
         db.delete(WeightEntry.TABLE_NAME, "1 = 1", null);
+    }
+
+    public boolean hasEntryFor(Date date) {
+        return doesEntryExist(DateUtil.getDateInteger(date));
     }
 
     public void deleteEntry(Date date) {

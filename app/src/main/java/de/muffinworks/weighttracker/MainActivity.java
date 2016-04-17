@@ -1,12 +1,16 @@
 package de.muffinworks.weighttracker;
 
+import android.app.AlarmManager;
 import android.app.DialogFragment;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.view.Menu;
@@ -28,12 +32,16 @@ import java.util.List;
 
 import de.muffinworks.weighttracker.db.Weight;
 import de.muffinworks.weighttracker.db.WeightDbService;
+import de.muffinworks.weighttracker.services.AlarmReceiver;
+import de.muffinworks.weighttracker.services.NotifyService;
+import de.muffinworks.weighttracker.ui.SetNotificationFragment;
 import de.muffinworks.weighttracker.ui.WeightDialogFragment;
 import de.muffinworks.weighttracker.util.ConfigUtil;
 import de.muffinworks.weighttracker.util.DateUtil;
 
 public class MainActivity extends AppCompatActivity
-    implements WeightDialogFragment.WeightDialogListener {
+    implements WeightDialogFragment.WeightDialogListener,
+        SetNotificationFragment.NotificationFragmentListener {
 
     private FloatingActionButton fab;
     private TextView mCurrentWeight;
@@ -237,6 +245,12 @@ public class MainActivity extends AppCompatActivity
             showSnackbar("Deleted all the data!");
             return true;
         }
+        if (id == R.id.action_set_notification) {
+            SetNotificationFragment dialog = new SetNotificationFragment();
+            dialog.setTime(Math.max(config.getReminderHour(), 0), Math.max(config.getReminderMinute(),0));
+            dialog.show(getFragmentManager(), "wut");
+        }
+
 
 
 
@@ -288,4 +302,19 @@ public class MainActivity extends AppCompatActivity
         Snackbar.make(this.findViewById(R.id.fab), message, Snackbar.LENGTH_SHORT)
                 .setAction("Action", null).show();
     }
+
+    @Override
+    public void SetReminder(int hour, int minute) {
+        config.setReminderTime(hour, minute);
+        Log.i("MainActivity", "Reminder time set to " + hour + ":" + minute);
+        //RemoveReminder();
+        new AlarmReceiver().setAlarm(getApplicationContext(), config.getReminderHour(), config.getReminderMinute());
+    }
+
+    @Override
+    public void DisableReminder() {
+        config.setReminderTime(-1, -1);
+        new AlarmReceiver().clearAlarm(getApplicationContext());
+    }
+
 }

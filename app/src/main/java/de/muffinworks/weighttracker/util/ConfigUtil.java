@@ -26,4 +26,19 @@ public class ConfigUtil {
         editor.putString("timeperiod", timePeriod);
         editor.apply();
     }
+
+    public int getReminderHour() {
+        return this.prefs.getInt("reminderHour", -1);
+    }
+
+    public int getReminderMinute() {
+        return this.prefs.getInt("reminderMinute", -1);
+    }
+
+    public void setReminderTime(int hour, int minute) {
+        SharedPreferences.Editor editor = this.prefs.edit();
+        editor.putInt("reminderHour", hour);
+        editor.putInt("reminderMinute", minute);
+        editor.apply();
+    }
 }
