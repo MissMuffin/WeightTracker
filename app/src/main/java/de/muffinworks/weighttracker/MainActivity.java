@@ -1,6 +1,7 @@
 package de.muffinworks.weighttracker;
 
 import android.app.DialogFragment;
+import android.app.admin.DeviceAdminInfo;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -17,19 +18,35 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
-import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
-
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 import de.muffinworks.weighttracker.db.Weight;
 import de.muffinworks.weighttracker.db.WeightDbService;
 import de.muffinworks.weighttracker.ui.WeightDialogFragment;
+import de.muffinworks.weighttracker.util.Constants;
 import de.muffinworks.weighttracker.util.DateUtil;
+import lecho.lib.hellocharts.gesture.ContainerScrollType;
+import lecho.lib.hellocharts.gesture.ZoomType;
+import lecho.lib.hellocharts.listener.ColumnChartOnValueSelectListener;
+import lecho.lib.hellocharts.model.AbstractChartData;
+import lecho.lib.hellocharts.model.Axis;
+import lecho.lib.hellocharts.model.AxisValue;
+import lecho.lib.hellocharts.model.Column;
+import lecho.lib.hellocharts.model.ColumnChartData;
+import lecho.lib.hellocharts.model.Line;
+import lecho.lib.hellocharts.model.LineChartData;
+import lecho.lib.hellocharts.model.PointValue;
+import lecho.lib.hellocharts.model.SelectedValue;
+import lecho.lib.hellocharts.model.SubcolumnValue;
+import lecho.lib.hellocharts.model.Viewport;
+import lecho.lib.hellocharts.util.ChartUtils;
+import lecho.lib.hellocharts.view.AbstractChartView;
+import lecho.lib.hellocharts.view.ColumnChartView;
+import lecho.lib.hellocharts.view.LineChartView;
 
 public class MainActivity extends AppCompatActivity
     implements WeightDialogFragment.WeightDialogListener {
@@ -38,10 +55,17 @@ public class MainActivity extends AppCompatActivity
     private TextView mCurrentWeight;
     private WeightDbService dbService;
     private WeightDialogFragment mDialog;
-    private Spinner mSpinner;
-    private GraphView mGraph;
-    private TextView mCurrentTime;
     private Weight mTodayWeight;
+
+    private LineChartView daysLineChart;
+    private ColumnChartView monthsColumnChart;
+    private LineChartData daysData;
+    private ColumnChartData monthsData;
+
+    //used to store linegraph data for each month
+    private List<List<PointValue>> lineGraphsForMonths = new ArrayList<List<PointValue>>();
+    //stores axis values for days in each month
+    private List<List<AxisValue>> axisValuesForMonths = new ArrayList<List<AxisValue>>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,68 +85,139 @@ public class MainActivity extends AppCompatActivity
         });
 
         dbService = new WeightDbService(this);
-        // Create dummy data.
-//        dbService.createDummyEntries();
 
         initCurrentWeight();
-        initSpinner();
         initGraph();
     }
 
     //INIT STUFF
     private void initGraph() {
         //display current week number, month name and year below in textview
-        mCurrentTime = (TextView) findViewById(R.id.current_time_period);
+        daysLineChart = (LineChartView) findViewById(R.id.line_chart);
+        monthsColumnChart = (ColumnChartView) findViewById(R.id.column_chart);
 
-        List<DataPoint> pts = new ArrayList<>();
-            List<Weight> weights = dbService.getAllEntries();
-            DataPoint[] values = new DataPoint[weights.size()];
-            for(int i = 0; i < weights.size(); ++i) {
-                Weight w = weights.get(i);
-                values[i] = new DataPoint(w.getDate(), w.getKilos());
+        //months column init
+        int numColumns = Calendar.getInstance(Locale.getDefault()).get(Calendar.MONTH) + 1;
+        List<AxisValue> monthsAxisValues = new ArrayList<>();
+        List<Column> columns = new ArrayList<>();
+
+        for (int i = 0; i < numColumns; i++) {
+            List<Weight> weightsForMonth = dbService.getMonthFilled(Constants.MONTHS[i]);
+            List<AxisValue> daysAxisValues = new ArrayList<>();
+
+            //setup column with label showing average for month and add it to columns list:
+            monthsAxisValues.add(new AxisValue(i).setLabel(Constants.MONTHS_STRINGS[i]));
+            List<SubcolumnValue> average = new ArrayList<>();
+            average.add(new SubcolumnValue((float)Weight.getAverage(weightsForMonth)));
+            columns.add(new Column(average).setHasLabelsOnlyForSelected(true));
+
+            //setup line graph for month
+            List<PointValue> points = new ArrayList<>();
+            for (int j = 0; j < weightsForMonth.size(); j++) {
+                //add data point
+                points.add(new PointValue(j, (float)weightsForMonth.get(i).getKilos()));
+                //add label for data point
+                daysAxisValues.add(new AxisValue(j).setLabel(Integer.toString(j+1)));
+            }
+            //add list of data points for current month to list
+            lineGraphsForMonths.add(points);
+            //add list of axis values for current month
+            axisValuesForMonths.add(daysAxisValues);
         }
 
-        mGraph = (GraphView) findViewById(R.id.graph);
-        LineGraphSeries<DataPoint> series = new LineGraphSeries<>(values);
-        mGraph.addSeries(series);
+        //PREPARE COLUMN DATA
+        monthsData = new ColumnChartData(columns);
+        monthsData.setAxisXBottom(new Axis(monthsAxisValues));
+        setAxisColor(monthsData, R.color.black);
 
-        // set date label formatter
-        mGraph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(this));
-        mGraph.getGridLabelRenderer().setNumHorizontalLabels(3); // only 3 because of the space
+        //SET COLUMNS
+        monthsColumnChart.setColumnChartData(monthsData);
+        // Set selection mode to keep selected month column highlighted.
+        monthsColumnChart.setValueSelectionEnabled(true);
+        monthsColumnChart.setZoomType(ZoomType.HORIZONTAL);
+        monthsColumnChart.setMaxZoom(4);
+        //set to current month as x value
+        monthsColumnChart.setZoomLevel(monthsData.getColumns().size() - 1, 0, 2);
 
-        // set manual x bounds to have nice steps
-        if(weights.size() > 0) {
-            Weight first = weights.get(0);
-            Weight last = weights.get(weights.size()-1);
-            mGraph.getViewport().setMinX(first.getDate().getTime());
-            mGraph.getViewport().setMaxX(last.getDate().getTime());
-            mGraph.getViewport().setXAxisBoundsManual(true);
-
-            mGraph.getViewport().setYAxisBoundsManual(true);
-            mGraph.getViewport().setMinY(60);
-            mGraph.getViewport().setMaxY(70);
-        }
-    }
-
-    private void initSpinner() {
-        mSpinner = (Spinner) findViewById(R.id.spinner_time_period);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.time_period_array, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mSpinner.setAdapter(adapter);
-        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+        // Set value touch listener that will trigger changes for line graph.
+        monthsColumnChart.setOnValueTouchListener(new ColumnChartOnValueSelectListener() {
             @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                // An item was selected. You can retrieve the selected item using
-                // parent.getItemAtPosition(pos)
-                showToast(parent.getItemAtPosition(position).toString());
+            public void onValueSelected(int columnIndex, int subcolumnIndex, SubcolumnValue value) {
+                //TODO set line graph for day weight values in selected month
+                setLineGraph(columnIndex);
             }
 
             @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
+            public void onValueDeselected() {
             }
         });
+
+        //TODO set current month as selected
+//        monthsColumnChart.getOnValueTouchListener().onValueSelected(DateUtil.getCurrentMonthIndex(),
+//                0, null);
+
+        //PREPARE LINE DATA
+        Line line = new Line(lineGraphsForMonths.get(DateUtil.getCurrentMonthIndex()));
+        line.setColor(R.color.colorAccent);
+        List<Line> lines = new ArrayList<>();
+        lines.add(line);
+
+        daysData = new LineChartData();
+        daysData.setLines(lines);
+        daysData.setAxisXBottom(new Axis(axisValuesForMonths.get(DateUtil.getCurrentMonthIndex()))
+                .setHasLines(true));
+        setAxisColor(daysData, R.color.black);
+        daysData.setAxisYLeft(new Axis().setHasLines(true).setMaxLabelChars(3));
+
+        //SET LINE DATA
+        int daysInMonth = DateUtil.getDaysInMonth(DateUtil.getCurrentMonthIndex());
+        daysLineChart.setLineChartData(daysData);
+
+        // For build-up animation you have to disable viewport recalculation.
+        daysLineChart.setViewportCalculationEnabled(false);
+
+        // And set initial max viewport and current viewport- remember to set viewports after data.
+        Viewport v = new Viewport(
+                0,
+                110,
+                (float)daysInMonth,
+                0
+        );
+        daysLineChart.setMaximumViewport(v);
+        daysLineChart.setCurrentViewport(v);
+        daysLineChart.setZoomLevel(daysInMonth, 0, 4);
+        daysLineChart.setZoomEnabled(true);
+        daysLineChart.setZoomType(ZoomType.HORIZONTAL);
+        daysLineChart.setContainerScrollEnabled(true, ContainerScrollType.HORIZONTAL);
+    }
+
+    private void setAxisColor(AbstractChartData data, int color) {
+        Axis top = data.getAxisXTop();
+        Axis right = data.getAxisYRight();
+        Axis bottom = data.getAxisXBottom();
+        Axis left = data.getAxisYLeft();
+
+        if (top!=null) top.setTextColor(color).setLineColor(color);
+        if (right!=null) right.setTextColor(color).setLineColor(color);
+        if (bottom!=null) bottom.setTextColor(color).setLineColor(color);
+        if (left!=null) left.setTextColor(color).setLineColor(color);
+    }
+
+    private void setLineGraph(int monthIndex) {
+        // Cancel last animation if not finished.
+        daysLineChart.cancelDataAnimation();
+        // Modify data targets
+        Line line = daysData.getLines().get(0);//there is always only one line at any given time
+        line.setColor(R.color.colorAccent);
+        line.setValues(lineGraphsForMonths.get(monthIndex));
+
+        Viewport v = daysLineChart.getCurrentViewport();
+        v.set(0, 110, (float)axisValuesForMonths.get(DateUtil.getCurrentMonthIndex()).size(), 0);
+        daysLineChart.setMaximumViewport(v);
+        daysLineChart.setCurrentViewport(v);
+
+        // Start new data animation with 300ms duration;
+        daysLineChart.startDataAnimation(300);
     }
 
     private void initCurrentWeight() {

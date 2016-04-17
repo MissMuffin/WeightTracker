@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 import de.muffinworks.weighttracker.db.WeightContract.WeightEntry;
@@ -130,17 +131,60 @@ public class WeightDbService {
         return entries;
     }
 
-    public List<Weight> getCurrentWeek() {
-        //get cal obj with current date
-        //get first day of week from cal and set
-        //add 7
-
-        return null;
+    public List<Weight> getCurrentMonth() {
+        return getMonth(Calendar.getInstance(Locale.getDefault()).get(Calendar.MONTH));
     }
 
-    public List<Weight> getCurrentMonth() {
-        //select for current month in time double
-        return null;
+    public List<Weight> getMonth(int month) {
+        Calendar c = Calendar.getInstance(Locale.getDefault());
+        c.set(Calendar.MONTH, month);
+        c.set(Calendar.DAY_OF_MONTH, 1);
+        Date firstDay = c.getTime();
+        c.set(Calendar.DAY_OF_MONTH, c.getActualMaximum(Calendar.DAY_OF_MONTH));
+        Date lastDay = c.getTime();
+        return get(firstDay, lastDay);
+    }
+
+    private List<Weight> fillMonthList(List<Weight> list, int month, int year) {
+        List<Weight> filledList = null;
+        Calendar c = Calendar.getInstance(Locale.getDefault());
+        c.set(year, month, 1);
+        int numberOfDays = c.getActualMaximum(Calendar.DAY_OF_MONTH);
+        filledList = new ArrayList<>();
+        double lastWeightEntry = -1;
+
+        for (int i = 1; i <= numberOfDays; i++) {
+            c.set(Calendar.DAY_OF_MONTH, i);
+            Date day = c.getTime();
+
+            if (list.contains(day)) {
+                Weight w = list.get(i);
+                lastWeightEntry = w.getKilos();
+                filledList.add(w);
+            } else {
+                if (lastWeightEntry == -1) {
+                    lastWeightEntry = getLastWeightEntry(c.getTime());
+                }
+                filledList.add(new Weight(day, lastWeightEntry));
+            }
+        }
+        return filledList;
+    }
+
+    private double getLastWeightEntry(Date date) {
+        List<Weight> entries = getAllEntries();
+        double lastWeightEntry = -1;
+        for (int i = entries.size()-1; i >= 0; i--) {
+            Weight w = entries.get(i);
+            if (w.getDateInt() > DateUtil.getDateInteger(date)) continue;
+            //should be more efficient than contains?
+            lastWeightEntry = w.getKilos();
+        }
+        return lastWeightEntry;
+    }
+
+    public List<Weight> getMonthFilled(int month) {
+        return fillMonthList(getMonth(month), month, Calendar.getInstance(Locale.getDefault()).get(Calendar.YEAR));
     }
 
     public List<Weight> getCurrentYear() {

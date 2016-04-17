@@ -1,5 +1,6 @@
 package de.muffinworks.weighttracker.util;
 
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
@@ -35,6 +36,11 @@ public class DateUtil {
 
     public static Date currentDate() {
         return Calendar.getInstance(Locale.getDefault()).getTime();
+    }
+
+    public static int getCurrentMonthIndex() {
+        c.setTime(currentDate());
+        return c.get(Calendar.MONTH);
     }
 
     public static boolean compareMonth(Date d1, Date d2) {
@@ -86,5 +92,15 @@ public class DateUtil {
     public static boolean isFutureDate(Date d1) {
         c = Calendar.getInstance(Locale.getDefault());
          return d1.after(c.getTime());
+    }
+
+    public static boolean isValidMonth(int month) {
+        return Arrays.asList(Constants.MONTHS).contains(month);
+    }
+
+    public static int getDaysInMonth(int month) {
+        Calendar c = Calendar.getInstance(Locale.getDefault());
+        c.set(Calendar.MONTH, month);
+        return c.getActualMaximum(Calendar.DAY_OF_MONTH);
     }
 }
