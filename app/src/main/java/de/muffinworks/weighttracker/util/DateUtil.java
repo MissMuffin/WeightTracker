@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Bianca on 18.03.2016.
@@ -103,4 +104,25 @@ public class DateUtil {
         c.set(Calendar.MONTH, month);
         return c.getActualMaximum(Calendar.DAY_OF_MONTH);
     }
+
+    public static String toShortString(Date date) {
+        c.setTime(date);
+        return String.format("%1$tY-%1$tm-%1$td", c);
+    }
+
+    public static String toMonthYearString(Date date) {
+        c.setTime(date);
+        return String.format("%1$tb '%1$ty", c);
+    }
+
+    public static String toYearString(Date date) {
+        c.setTime(date);
+        return String.format("%1$tY", c);
+    }
+
+    public static int daysBetween(Date d1, Date d2) {
+        long diff = d2.getTime() - d1.getTime();
+        return (int) TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+    }
+
 }

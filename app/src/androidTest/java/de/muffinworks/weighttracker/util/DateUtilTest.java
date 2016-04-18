@@ -6,6 +6,8 @@ import org.junit.Test;
 
 import java.util.Calendar;
 import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.concurrent.TimeUnit;
 
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertThat;
@@ -51,4 +53,25 @@ public class DateUtilTest {
         assertThat(DateUtil.compareYear(mil2, mil3), is(false));
         assertThat(DateUtil.compareYear(mil3, mil3Plus), is(true));
     }
+
+    @Test
+    public void testShortString() {
+        Calendar c = new GregorianCalendar(1992, 0, 11);
+        assertThat(DateUtil.toShortString(c.getTime()), is("1992-01-11"));
+    }
+
+
+    @Test
+    public void testMonthYearString() {
+        Calendar c = new GregorianCalendar(1992, 0, 11);
+        assertThat(DateUtil.toMonthYearString(c.getTime()), is("Jan 92"));
+    }
+
+    @Test
+    public void testYearString() {
+        Calendar c = new GregorianCalendar(1992, 0, 11);
+        assertThat(DateUtil.toYearString(c.getTime()), is("1992"));
+    }
+
+
 }
