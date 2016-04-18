@@ -19,24 +19,42 @@ public class DateUtil {
         };
 
     public static Date getDateFromInteger(int date) {
+        c.setTimeInMillis(((long) date) * 1000 * 3600 * 24);
+        return c.getTime();
+        /*
         String s = date+"";
         int year = Integer.parseInt(s.substring(0, 4));
         int month = Integer.parseInt(s.substring(4, 6));
         int day = Integer.parseInt(s.substring(6, 8));
         c.set(year, month, day);
         return c.getTime();
+        */
     }
 
     public static int getDateInteger(Date date) {
+        return (int) (date.getTime() / 1000 / 3600 / 24);
+        /*
         c.setTime(date);
         String year = c.get(Calendar.YEAR)+"";
         String month = String.format("%02d", c.get(Calendar.MONTH));
         String day = String.format("%02d", c.get(Calendar.DAY_OF_MONTH));
         return Integer.parseInt("" + year + month + day);
+        */
     }
 
     public static Date currentDate() {
         return Calendar.getInstance(Locale.getDefault()).getTime();
+    }
+
+    public static Date oneWeekAgo() {
+        c.setTime(currentDate());
+        c.add(Calendar.DATE, -7);
+        return c.getTime();
+    }
+
+    public static Date coolDate() {
+        c.set(1992, 0, 11);
+        return c.getTime();
     }
 
     public static int getCurrentMonthIndex() {

@@ -64,7 +64,7 @@ public class DateUtilTest {
     @Test
     public void testMonthYearString() {
         Calendar c = new GregorianCalendar(1992, 0, 11);
-        assertThat(DateUtil.toMonthYearString(c.getTime()), is("Jan 92"));
+        assertThat(DateUtil.toMonthYearString(c.getTime()), is("Jan '92"));
     }
 
     @Test

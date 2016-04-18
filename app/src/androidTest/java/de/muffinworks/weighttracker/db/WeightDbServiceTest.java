@@ -45,22 +45,22 @@ public class WeightDbServiceTest {
         assertThat(2, is(weights.size()));
         assertThat(120.0, is(weights.get(1).getKilos()));
         assertThat(DateUtil.getDateInteger(DateUtil.currentDate()), is(weights.get(1).getDateInt()));
-        assertThat(20101011, is(weights.get(0).getDateInt()));
+        assertThat(14924, is(weights.get(0).getDateInt()));
     }
 
     @Test
     public void testGet() {
         Weight weight = new Weight(2111, 3, 12, 11.0);
         service.putWeightEntry(weight);
-        assertThat(11.0, is(service.get(DateUtil.getDateFromInteger(21110212)).getKilos()));
+        assertThat(11.0, is(service.get(DateUtil.getDateFromInteger(weight.getDateInt())).getKilos()));
     }
 
     @Test
     public void testDelete() {
         Weight weight = new Weight(2011, 1, 22, 333);
         service.putWeightEntry(weight);
-        service.deleteEntry(DateUtil.getDateFromInteger(20110022));
-        assertThat(null, is(service.get(DateUtil.getDateFromInteger(20110022))));
+        service.deleteEntry(DateUtil.getDateFromInteger(weight.getDateInt()));
+        assertThat(null, is(service.get(DateUtil.getDateFromInteger(weight.getDateInt()))));
     }
 
     @Test
