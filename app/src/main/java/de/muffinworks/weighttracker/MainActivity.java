@@ -41,6 +41,7 @@ import lecho.lib.hellocharts.model.PointValue;
 import lecho.lib.hellocharts.model.Viewport;
 import lecho.lib.hellocharts.view.LineChartView;
 import lecho.lib.hellocharts.view.PreviewLineChartView;
+import lecho.lib.hellocharts.view.hack.HackyViewPager;
 
 public class MainActivity extends AppCompatActivity
     implements WeightDialogFragment.WeightDialogListener,
@@ -58,8 +59,14 @@ public class MainActivity extends AppCompatActivity
     private LineChartData data;
     private LineChartData previewData;
 
+    private Axis yearAxis;
+    private Axis monthAxis;
+    private Axis dateAxis;
+
     private ConfigUtil config;
     private String selectedTimePeriod = null;
+
+    private HackyViewPager viewPager;
 
 
     @Override
@@ -82,11 +89,15 @@ public class MainActivity extends AppCompatActivity
         dbService = new WeightDbService(this);
 
         initCurrentWeight();
-        updateGraph();
+//        updateGraph();
         config = new ConfigUtil(this);
         selectedTimePeriod = config.getTimePeriod();
+
+        viewPager = (HackyViewPager) findViewById(R.id.viewPager);
+        viewPager.setAdapter(new CustomPagerAdapter(this));
     }
 
+    //GRAPH STUFF
     private class ZoomOutAxisChanger implements ViewportChangeListener {
 
         @Override
@@ -103,9 +114,7 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-
     private class ViewportListener implements ViewportChangeListener {
-
 
         @Override
         public void onViewportChanged(Viewport newViewport) {
@@ -113,10 +122,6 @@ public class MainActivity extends AppCompatActivity
         }
 
     }
-
-    private Axis yearAxis;
-    private Axis monthAxis;
-    private Axis dateAxis;
 
     private void createAxis(Date startDate, Date endDate) {
         List<AxisValue> dateAxisValues = new ArrayList<>();
@@ -149,9 +154,6 @@ public class MainActivity extends AppCompatActivity
                 .setHasLines(true);
     }
 
-    /***
-     *
-     */
     private Line createDummyPoints(Date startDate, Date endDate) {
         int minX = DateUtil.getDateInteger(startDate);
         int maxX = DateUtil.getDateInteger(endDate)+2;
@@ -169,103 +171,104 @@ public class MainActivity extends AppCompatActivity
     }
 
     //INIT STUFF
-    private void updateGraph() {
-        // display current week number, month name and year below in textview
-        lineChart = (LineChartView) findViewById(R.id.line_chart);
-        previewLineChart = (PreviewLineChartView) findViewById(R.id.preview_line_chart);
+//    private void updateGraph() {
+//        // display current week number, month name and year below in textview
+//        lineChart = (LineChartView) findViewById(R.id.line_chart);
+//        previewLineChart = (PreviewLineChartView) findViewById(R.id.preview_line_chart);
+//
+//        List<PointValue> values = new ArrayList<>();
+//        List<Weight> weights = dbService.getAllEntries();
+//
+//        //fill graph
+//        for(int i = 0; i < weights.size(); ++i) {
+//            Weight weight = weights.get(i);
+//            int x = (int) TimeUnit.DAYS.convert(weight.getDate().getTime(), TimeUnit.MILLISECONDS);
+//            values.add(new PointValue(x, (float) weight.getKilos()));
+//        }
+//
+//        Line dummyline;
+//        if(weights.size() == 0) {
+//            createAxis(DateUtil.coolDate(), DateUtil.currentDate());
+//            dummyline = createDummyPoints(DateUtil.coolDate(), DateUtil.currentDate());
+//        } else {
+//            Date earliest = weights.get(0).getDate();
+//            Date latest = weights.get(weights.size() - 1).getDate();
+//            if(DateUtil.daysBetween(earliest, latest) < 7) {
+//                createAxis(DateUtil.oneWeekAgo(), DateUtil.currentDate());
+//                dummyline = createDummyPoints(DateUtil.oneWeekAgo(), DateUtil.currentDate());
+//            } else {
+//                createAxis(earliest, DateUtil.currentDate());
+//                dummyline = createDummyPoints(earliest, DateUtil.currentDate());
+//            }
+//        }
+//
+//        //PREPARE LINE DATA
+//        Line line = new Line(values);
+//        line.setColor(R.color.colorAccent);
+//        line.setHasPoints(false);
+//
+//        List<Line> lines = new ArrayList<>();
+//        lines.add(line);
+//        lines.add(dummyline);
+//
+//        data = new LineChartData(lines);
+//        data.setAxisXBottom(dateAxis);
+//        data.setAxisYLeft(new Axis()
+//                .setHasLines(true)
+//                .setMaxLabelChars(4));
+//
+//        previewData = new LineChartData(lines);
+//        previewData.setAxisXBottom(monthAxis);
+//        previewData.setAxisYLeft(new Axis()
+//                .setMaxLabelChars(4));
+//        //previewData.setAxisYLeft(null);
+//
+//        setAxisColor(data, R.color.black);
+//
+//        //SET LINE DATA
+//        lineChart.setLineChartData(data);
+//        previewLineChart.setLineChartData(previewData);
+//
+//        lineChart.setViewportChangeListener(new ZoomOutAxisChanger());
+//        previewLineChart.setViewportChangeListener(new ViewportListener());
+//        lineChart.setPadding(25, 25, 25, 25);
+//        previewLineChart.setPadding(25, 25, 25, 25);
+//
+//
+//        // For build-up animation you have to disable viewport recalculation.
+//        //lineChart.setViewportCalculationEnabled(false);
+//
+//        Viewport maxViewport = lineChart.getMaximumViewport();
+//
+//        int right = (int) maxViewport.right;
+//        int left = Math.max((int) maxViewport.left, right - 31);
+//        int top = (int) maxViewport.top+2;
+//
+//        // Zoom to latest 31 days
+//        Viewport viewport = new Viewport(left, top, right, 0);
+//        previewLineChart.setCurrentViewport(viewport);
+//        lineChart.setCurrentViewport(viewport);
+//
+//        lineChart.setZoomEnabled(false);
+//        lineChart.setScrollEnabled(false);
+//
+//        previewLineChart.setZoomType(ZoomType.HORIZONTAL);
+//        previewLineChart.setZoomEnabled(true);
+//    }
+//
+//    private void setAxisColor(AbstractChartData data, int color) {
+//        Axis top = data.getAxisXTop();
+//        Axis right = data.getAxisYRight();
+//        Axis bottom = data.getAxisXBottom();
+//        Axis left = data.getAxisYLeft();
+//
+//        if (top!=null) top.setTextColor(color).setLineColor(color);
+//        if (right!=null) right.setTextColor(color).setLineColor(color);
+//        if (bottom!=null) bottom.setTextColor(color).setLineColor(color);
+//        if (left!=null) left.setTextColor(color).setLineColor(color);
+//    }
 
-        List<PointValue> values = new ArrayList<>();
-        List<Weight> weights = dbService.getAllEntries();
-
-
-        for(int i = 0; i < weights.size(); ++i) {
-            Weight weight = weights.get(i);
-            int x = (int) TimeUnit.DAYS.convert(weight.getDate().getTime(), TimeUnit.MILLISECONDS);
-            values.add(new PointValue(x, (float) weight.getKilos()));
-        }
-
-        Line dummyline;
-        if(weights.size() == 0) {
-            createAxis(DateUtil.coolDate(), DateUtil.currentDate());
-            dummyline = createDummyPoints(DateUtil.coolDate(), DateUtil.currentDate());
-        } else {
-            Date earliest = weights.get(0).getDate();
-            Date latest = weights.get(weights.size() - 1).getDate();
-            if(DateUtil.daysBetween(earliest, latest) < 7) {
-                createAxis(DateUtil.oneWeekAgo(), DateUtil.currentDate());
-                dummyline = createDummyPoints(DateUtil.oneWeekAgo(), DateUtil.currentDate());
-            } else {
-                createAxis(earliest, DateUtil.currentDate());
-                dummyline = createDummyPoints(earliest, DateUtil.currentDate());
-            }
-        }
-
-        //PREPARE LINE DATA
-        Line line = new Line(values);
-        line.setColor(R.color.colorAccent);
-        line.setHasPoints(false);
-
-        List<Line> lines = new ArrayList<>();
-        lines.add(line);
-        lines.add(dummyline);
-
-        data = new LineChartData(lines);
-        data.setAxisXBottom(dateAxis);
-        data.setAxisYLeft(new Axis()
-                .setHasLines(true)
-                .setMaxLabelChars(4));
-
-        previewData = new LineChartData(lines);
-        previewData.setAxisXBottom(monthAxis);
-        previewData.setAxisYLeft(new Axis()
-                .setMaxLabelChars(4));
-        //previewData.setAxisYLeft(null);
-
-        setAxisColor(data, R.color.black);
-
-        //SET LINE DATA
-        lineChart.setLineChartData(data);
-        previewLineChart.setLineChartData(previewData);
-
-        lineChart.setViewportChangeListener(new ZoomOutAxisChanger());
-        previewLineChart.setViewportChangeListener(new ViewportListener());
-        lineChart.setPadding(25, 25, 25, 25);
-        previewLineChart.setPadding(25, 25, 25, 25);
-
-
-        // For build-up animation you have to disable viewport recalculation.
-        //lineChart.setViewportCalculationEnabled(false);
-
-        Viewport maxViewport = lineChart.getMaximumViewport();
-
-        int right = (int) maxViewport.right;
-        int left = Math.max((int) maxViewport.left, right - 31);
-        int top = (int) maxViewport.top+2;
-
-        // Zoom to latest 31 days
-        Viewport viewport = new Viewport(left, top, right, 0);
-        previewLineChart.setCurrentViewport(viewport);
-        lineChart.setCurrentViewport(viewport);
-
-        lineChart.setZoomEnabled(false);
-        lineChart.setScrollEnabled(false);
-
-        previewLineChart.setZoomType(ZoomType.HORIZONTAL);
-        previewLineChart.setZoomEnabled(true);
-    }
-
-    private void setAxisColor(AbstractChartData data, int color) {
-        Axis top = data.getAxisXTop();
-        Axis right = data.getAxisYRight();
-        Axis bottom = data.getAxisXBottom();
-        Axis left = data.getAxisYLeft();
-
-        if (top!=null) top.setTextColor(color).setLineColor(color);
-        if (right!=null) right.setTextColor(color).setLineColor(color);
-        if (bottom!=null) bottom.setTextColor(color).setLineColor(color);
-        if (left!=null) left.setTextColor(color).setLineColor(color);
-    }
-
+    //CURRENT WEIGHT STUFF
     private void initCurrentWeight() {
         mCurrentWeight = (TextView) findViewById(R.id.currentDayWeight);
 
@@ -307,14 +310,14 @@ public class MainActivity extends AppCompatActivity
         else if (id == R.id.settings_add_test_data) {
             // Create dummy data.
             dbService.createDummyEntries();
-            updateGraph();
+//            updateGraph();
             updateCurrentWeightText();
             showSnackbar("Created dummy data!");
-            return true; // why return true?
+            return true; // why return true? -> to tell system that event has been handled and it can keep its hands off
         }
         else if(id == R.id.action_delete_data) {
             dbService.clearAll();
-            updateGraph();
+//            updateGraph();
             updateCurrentWeightText();
             showSnackbar("Deleted all the data!");
             return true;
@@ -322,12 +325,8 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.action_set_notification) {
             SetNotificationFragment dialog = new SetNotificationFragment();
             dialog.setTime(Math.max(config.getReminderHour(), 0), Math.max(config.getReminderMinute(),0));
-            dialog.show(getFragmentManager(), "wut");
+            dialog.show(getFragmentManager(), "timer dialog");
         }
-
-
-
-
         return super.onOptionsItemSelected(item);
     }
 
@@ -353,7 +352,7 @@ public class MainActivity extends AppCompatActivity
             dbService.putWeightEntry(new Weight(date, weight));
         }
         updateCurrentWeightText();
-        updateGraph();
+//        updateGraph();
     }
 
     public void onDialogNegativeClick(DialogFragment dialog) {
@@ -364,8 +363,6 @@ public class MainActivity extends AppCompatActivity
     public void onDialogDismiss(DialogFragment dialog) {
         showToast("dismiss");
     }
-
-    //SPINNER ON ITEM CLICK HANDLING
 
     //LOGGING
     private void showToast(String msg) {
