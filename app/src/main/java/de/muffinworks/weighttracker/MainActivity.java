@@ -1,10 +1,7 @@
 package de.muffinworks.weighttracker;
 
-import android.app.AlarmManager;
 import android.app.DialogFragment;
-import android.app.PendingIntent;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -12,32 +9,38 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.util.TypedValue;
-import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.Spinner;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.jjoe64.graphview.GraphView;
-import com.jjoe64.graphview.helper.DateAsXAxisLabelFormatter;
-import com.jjoe64.graphview.series.DataPoint;
-import com.jjoe64.graphview.series.LineGraphSeries;
-
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import de.muffinworks.weighttracker.db.Weight;
 import de.muffinworks.weighttracker.db.WeightDbService;
 import de.muffinworks.weighttracker.services.AlarmReceiver;
-import de.muffinworks.weighttracker.services.NotifyService;
 import de.muffinworks.weighttracker.ui.SetNotificationFragment;
 import de.muffinworks.weighttracker.ui.WeightDialogFragment;
 import de.muffinworks.weighttracker.util.ConfigUtil;
 import de.muffinworks.weighttracker.util.DateUtil;
+import lecho.lib.hellocharts.gesture.ZoomType;
+import lecho.lib.hellocharts.listener.ViewportChangeListener;
+import lecho.lib.hellocharts.model.AbstractChartData;
+import lecho.lib.hellocharts.model.Axis;
+import lecho.lib.hellocharts.model.AxisValue;
+import lecho.lib.hellocharts.model.Column;
+import lecho.lib.hellocharts.model.ColumnChartData;
+import lecho.lib.hellocharts.model.Line;
+import lecho.lib.hellocharts.model.LineChartData;
+import lecho.lib.hellocharts.model.PointValue;
+import lecho.lib.hellocharts.model.Viewport;
+import lecho.lib.hellocharts.view.LineChartView;
+import lecho.lib.hellocharts.view.PreviewLineChartView;
 
 public class MainActivity extends AppCompatActivity
     implements WeightDialogFragment.WeightDialogListener,
@@ -47,13 +50,17 @@ public class MainActivity extends AppCompatActivity
     private TextView mCurrentWeight;
     private WeightDbService dbService;
     private WeightDialogFragment mDialog;
-    private Spinner mSpinner;
-    private GraphView mGraph;
-    private TextView mCurrentTime;
     private Weight mTodayWeight;
+
+
+    private LineChartView lineChart;
+    private PreviewLineChartView previewLineChart;
+    private LineChartData data;
+    private LineChartData previewData;
 
     private ConfigUtil config;
     private String selectedTimePeriod = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,123 +80,190 @@ public class MainActivity extends AppCompatActivity
         });
 
         dbService = new WeightDbService(this);
-        config = new ConfigUtil(this);
-        selectedTimePeriod = config.getTimePeriod();
-
 
         initCurrentWeight();
-        initSpinner();
         updateGraph();
+        config = new ConfigUtil(this);
+        selectedTimePeriod = config.getTimePeriod();
     }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-    }
+    private class ZoomOutAxisChanger implements ViewportChangeListener {
 
-    private List<Weight> getEntriesForSelectedTime() {
-        Date[] startEnd = getStartAndEndDatesForSelectedTime();
-
-        if(startEnd == null)
-            return dbService.getAllEntries();
-        return dbService.get(startEnd[0], startEnd[1]);
-    }
-
-    private Date[] getStartAndEndDatesForSelectedTime() {
-        Date today = DateUtil.currentDate();
-        Calendar c = Calendar.getInstance();
-        c.setTime(today);
-
-        selectedTimePeriod = (String) mSpinner.getSelectedItem();
-
-        switch(selectedTimePeriod) {
-            case "Week":
-                c.add(Calendar.DATE, -7);
-                return new Date[] { c.getTime(), today };
-            default:
-            case "Month":
-                c.add(Calendar.MONTH, -1);
-                return new Date[] { c.getTime(), today };
-            case "Year":
-                c.add(Calendar.YEAR, -1);
-                return new Date[] { c.getTime(), today };
-            case "All time":
-                return null;
+        @Override
+        public void onViewportChanged(Viewport viewport) {
+            int width = (int) viewport.right - (int) viewport.left;
+            Log.d("Viewport", "changed to " + width);
+            if (width < 90) {
+                data.setAxisXBottom(dateAxis);
+            } else if (width > 90) {
+                data.setAxisXBottom(monthAxis);
+            } else if (width > 730) {
+                data.setAxisXBottom(yearAxis);
+            }
         }
+    }
+
+
+    private class ViewportListener implements ViewportChangeListener {
+
+
+        @Override
+        public void onViewportChanged(Viewport newViewport) {
+            lineChart.setCurrentViewport(newViewport);
+        }
+
+    }
+
+    private Axis yearAxis;
+    private Axis monthAxis;
+    private Axis dateAxis;
+
+    private void createAxis(Date startDate, Date endDate) {
+        List<AxisValue> dateAxisValues = new ArrayList<>();
+        List<AxisValue> monthAxisValues = new ArrayList<>();
+        List<AxisValue> yearAxisValues = new ArrayList<>();
+
+        int minX = DateUtil.getDateInteger(startDate);
+        int maxX = DateUtil.getDateInteger(endDate)+2;
+
+        Log.d("Chart axis stuff", "creating axis for " + minX + " to " + maxX);
+        for(int x = minX; x < maxX; ++x) {
+            AxisValue dateAxisValue = new AxisValue(x).setLabel(DateUtil.toShortString(DateUtil.getDateFromInteger(x)));
+            dateAxisValues.add(dateAxisValue);
+
+            AxisValue monthAxisValue = new AxisValue(x).setLabel(DateUtil.toMonthYearString(DateUtil.getDateFromInteger(x)));
+            monthAxisValues.add(monthAxisValue);
+
+            AxisValue yearAxisValue = new AxisValue(x).setLabel(DateUtil.toYearString(DateUtil.getDateFromInteger(x)));
+            yearAxisValues.add(yearAxisValue);
+        }
+
+        yearAxis = new Axis(yearAxisValues)
+                .setMaxLabelChars(4);
+
+        monthAxis = new Axis(monthAxisValues)
+                .setMaxLabelChars(7);
+
+        dateAxis = new Axis(dateAxisValues)
+                .setMaxLabelChars(10)
+                .setHasLines(true);
+    }
+
+    /***
+     *
+     */
+    private Line createDummyPoints(Date startDate, Date endDate) {
+        int minX = DateUtil.getDateInteger(startDate);
+        int maxX = DateUtil.getDateInteger(endDate)+2;
+
+        List<PointValue> values = new ArrayList<>();
+
+        for(int x = minX; x < maxX; ++x) {
+            values.add(new PointValue(x, 0.0f));
+        }
+
+        Line line = new Line(values);
+        line.setHasPoints(false);
+        line.setColor(0x00000000);
+        return line;
     }
 
     //INIT STUFF
     private void updateGraph() {
-        //display current week number, month name and year below in textview
-        mCurrentTime = (TextView) findViewById(R.id.current_time_period);
+        // display current week number, month name and year below in textview
+        lineChart = (LineChartView) findViewById(R.id.line_chart);
+        previewLineChart = (PreviewLineChartView) findViewById(R.id.preview_line_chart);
 
-        mGraph = (GraphView) findViewById(R.id.graph);
+        List<PointValue> values = new ArrayList<>();
+        List<Weight> weights = dbService.getAllEntries();
 
-        List<Weight> weights = getEntriesForSelectedTime();
-
-        mGraph.removeAllSeries();
-        DataPoint[] values = new DataPoint[weights.size()];
 
         for(int i = 0; i < weights.size(); ++i) {
-            Weight w = weights.get(i);
-            values[i] = new DataPoint(w.getDate(), w.getKilos());
+            Weight weight = weights.get(i);
+            int x = (int) TimeUnit.DAYS.convert(weight.getDate().getTime(), TimeUnit.MILLISECONDS);
+            values.add(new PointValue(x, (float) weight.getKilos()));
         }
-        LineGraphSeries<DataPoint> series = new LineGraphSeries<>(values);
 
-        if(weights.size() > 0)
-            mGraph.addSeries(series);
-
-        // set date label formatter
-        mGraph.getGridLabelRenderer().setLabelFormatter(new DateAsXAxisLabelFormatter(this));
-        mGraph.getGridLabelRenderer().setNumHorizontalLabels(3); // only 3 because of the space
-
-        Date[] startEnd = getStartAndEndDatesForSelectedTime();
-        mGraph.getViewport().setXAxisBoundsManual(true);
-        if(startEnd != null) {
-            mGraph.getViewport().setMinX(startEnd[0].getTime());
-            mGraph.getViewport().setMaxX(startEnd[1].getTime());
+        Line dummyline;
+        if(weights.size() == 0) {
+            createAxis(DateUtil.coolDate(), DateUtil.currentDate());
+            dummyline = createDummyPoints(DateUtil.coolDate(), DateUtil.currentDate());
         } else {
-            if(weights.size() > 1) {
-                Weight first = weights.get(0);
-                Weight last = weights.get(weights.size() - 1);
-                mGraph.getViewport().setMinX(first.getDate().getTime());
-                mGraph.getViewport().setMaxX(last.getDate().getTime());
+            Date earliest = weights.get(0).getDate();
+            Date latest = weights.get(weights.size() - 1).getDate();
+            if(DateUtil.daysBetween(earliest, latest) < 7) {
+                createAxis(DateUtil.oneWeekAgo(), DateUtil.currentDate());
+                dummyline = createDummyPoints(DateUtil.oneWeekAgo(), DateUtil.currentDate());
             } else {
-                Calendar c = Calendar.getInstance();
-                c.set(1992, 1, 11);
-                mGraph.getViewport().setMinX(c.getTime().getTime());
-                c.set(2052, 1, 11);
-                mGraph.getViewport().setMaxX(c.getTime().getTime());
+                createAxis(earliest, DateUtil.currentDate());
+                dummyline = createDummyPoints(earliest, DateUtil.currentDate());
             }
         }
 
-        mGraph.getViewport().setYAxisBoundsManual(true);
-        mGraph.getViewport().setMinY(0);
+        //PREPARE LINE DATA
+        Line line = new Line(values);
+        line.setColor(R.color.colorAccent);
+        line.setHasPoints(false);
+
+        List<Line> lines = new ArrayList<>();
+        lines.add(line);
+        lines.add(dummyline);
+
+        data = new LineChartData(lines);
+        data.setAxisXBottom(dateAxis);
+        data.setAxisYLeft(new Axis()
+                .setHasLines(true)
+                .setMaxLabelChars(4));
+
+        previewData = new LineChartData(lines);
+        previewData.setAxisXBottom(monthAxis);
+        previewData.setAxisYLeft(new Axis()
+                .setMaxLabelChars(4));
+        //previewData.setAxisYLeft(null);
+
+        setAxisColor(data, R.color.black);
+
+        //SET LINE DATA
+        lineChart.setLineChartData(data);
+        previewLineChart.setLineChartData(previewData);
+
+        lineChart.setViewportChangeListener(new ZoomOutAxisChanger());
+        previewLineChart.setViewportChangeListener(new ViewportListener());
+        lineChart.setPadding(25, 25, 25, 25);
+        previewLineChart.setPadding(25, 25, 25, 25);
+
+
+        // For build-up animation you have to disable viewport recalculation.
+        //lineChart.setViewportCalculationEnabled(false);
+
+        Viewport maxViewport = lineChart.getMaximumViewport();
+
+        int right = (int) maxViewport.right;
+        int left = Math.max((int) maxViewport.left, right - 31);
+        int top = (int) maxViewport.top+2;
+
+        // Zoom to latest 31 days
+        Viewport viewport = new Viewport(left, top, right, 0);
+        previewLineChart.setCurrentViewport(viewport);
+        lineChart.setCurrentViewport(viewport);
+
+        lineChart.setZoomEnabled(false);
+        lineChart.setScrollEnabled(false);
+
+        previewLineChart.setZoomType(ZoomType.HORIZONTAL);
+        previewLineChart.setZoomEnabled(true);
     }
 
-    private void initSpinner() {
-        mSpinner = (Spinner) findViewById(R.id.spinner_time_period);
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(this,
-                R.array.time_period_array, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mSpinner.setAdapter(adapter);
-        if(selectedTimePeriod != null)
-            mSpinner.setSelection(adapter.getPosition(selectedTimePeriod));
-        mSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                // An item was selected. You can retrieve the selected item using
-                // parent.getItemAtPosition(pos)
-                showToast(parent.getItemAtPosition(position).toString());
-                config.setTimePeriod((String) mSpinner.getSelectedItem());
-                updateGraph();
-            }
+    private void setAxisColor(AbstractChartData data, int color) {
+        Axis top = data.getAxisXTop();
+        Axis right = data.getAxisYRight();
+        Axis bottom = data.getAxisXBottom();
+        Axis left = data.getAxisYLeft();
 
-            @Override
-            public void onNothingSelected(AdapterView<?> parent) {
-
-            }
-        });
+        if (top!=null) top.setTextColor(color).setLineColor(color);
+        if (right!=null) right.setTextColor(color).setLineColor(color);
+        if (bottom!=null) bottom.setTextColor(color).setLineColor(color);
+        if (left!=null) left.setTextColor(color).setLineColor(color);
     }
 
     private void initCurrentWeight() {
@@ -316,5 +390,6 @@ public class MainActivity extends AppCompatActivity
         config.setReminderTime(-1, -1);
         new AlarmReceiver().clearAlarm(getApplicationContext());
     }
+
 
 }

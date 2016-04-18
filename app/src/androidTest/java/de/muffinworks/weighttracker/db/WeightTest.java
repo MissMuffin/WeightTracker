@@ -25,7 +25,7 @@ public class WeightTest {
     public void testDateIntStuff() {
         Date date = new Weight(2010, 2, 1, 13.0).getDate();
         int asInt = DateUtil.getDateInteger(date);
-        assertThat(20100101, is(asInt));
+        assertThat(14641, is(asInt));
         assertThat(date, is(DateUtil.getDateFromInteger(asInt)));
     }
 

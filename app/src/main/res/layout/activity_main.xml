@@ -22,12 +22,13 @@
 
     </android.support.design.widget.AppBarLayout>
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    <LinearLayout
+        xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:orientation="vertical"
-        android:background="@android:color/holo_blue_bright"
-        android:weightSum="5"
+        android:background="@android:color/background_light"
+        android:weightSum="11"
         android:layout_marginTop="?attr/actionBarSize">
 
         <TextView
@@ -38,60 +39,27 @@
             android:background="@android:color/holo_green_dark"
             android:gravity="center"
             android:textSize="25pt"
-            android:layout_weight="2"/>
+            android:layout_weight="4.5"/>
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:orientation="vertical"
-            android:layout_weight="3"
-            android:paddingTop="15dp"
-            android:paddingRight="15dp"
-            android:paddingBottom="15dp"
-            android:paddingLeft="15dp"
+            android:layout_weight="6.5"
+            android:padding="15dp"
             android:weightSum="7">
 
-            <LinearLayout
+            <lecho.lib.hellocharts.view.LineChartView
+                android:id="@+id/line_chart"
                 android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginBottom="10dp"
-                android:background="@android:color/holo_blue_dark"
-                android:orientation="horizontal"
-                android:layout_weight="1"
-                android:weightSum="3">
+                android:layout_height="3dp"
+                android:layout_weight="4.79" />
 
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:gravity="center"
-                android:layout_marginRight="20dp"
-                android:layout_weight="1"
-                android:text="Time period:"/>
-
-            <Spinner
-                android:id="@+id/spinner_time_period"
-                android:layout_weight="2"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:background="@android:color/holo_blue_light"/>
-
-            </LinearLayout>
-
-
-            <com.jjoe64.graphview.GraphView
-                android:id="@+id/graph"
-                android:layout_weight="5"
+            <lecho.lib.hellocharts.view.PreviewLineChartView
+                android:id="@+id/preview_line_chart"
                 android:layout_width="match_parent"
-                android:layout_height="0dp" />
-
-            <TextView
-                android:id="@+id/current_time_period"
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="5dp"
-                android:text="January"
-                android:gravity="center"
-                android:layout_weight="1"/>
+                android:layout_height="3dp"
+                android:layout_weight="2.02" />
 
         </LinearLayout>
 
@@ -100,9 +68,10 @@
 
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"
+        app:layout_anchor="@id/currentDayWeight"
+        app:layout_anchorGravity="bottom|right|end"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|end"
         android:layout_margin="@dimen/fab_margin"
         android:src="@drawable/ic_date_range_white_48dp" />
 

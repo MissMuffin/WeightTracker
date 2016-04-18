@@ -3,6 +3,7 @@ package de.muffinworks.weighttracker.db;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.List;
 import java.util.TimeZone;
 
 import de.muffinworks.weighttracker.util.DateUtil;
@@ -94,5 +95,27 @@ public class Weight implements Comparable<Weight> {
     @Override
     public int compareTo(Weight another) {
         return getDateInt() - another.getDateInt();
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        boolean retVal = false;
+        if (o instanceof Weight){
+            Weight w = (Weight) o;
+            retVal = DateUtil.getDateInteger(w.getDate()) == this.date;
+        }
+
+        return retVal;
+    }
+
+    public static double getAverage(List<Weight> weights) {
+        double sum = 0;
+        if(!weights.isEmpty()) {
+            for (int i = 0, size = weights.size(); i < size; i++) {
+                sum += weights.get(i).getKilos();
+            }
+            return sum / weights.size();
+        }
+        return sum;
     }
 }
