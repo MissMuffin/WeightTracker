@@ -1,7 +1,10 @@
 package de.muffinworks.weighttracker;
 
+import android.app.AlarmManager;
 import android.app.DialogFragment;
+import android.app.PendingIntent;
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -23,7 +26,11 @@ import java.util.concurrent.TimeUnit;
 
 import de.muffinworks.weighttracker.db.Weight;
 import de.muffinworks.weighttracker.db.WeightDbService;
+import de.muffinworks.weighttracker.services.AlarmReceiver;
+import de.muffinworks.weighttracker.services.NotifyService;
+import de.muffinworks.weighttracker.ui.SetNotificationFragment;
 import de.muffinworks.weighttracker.ui.WeightDialogFragment;
+import de.muffinworks.weighttracker.util.ConfigUtil;
 import de.muffinworks.weighttracker.util.DateUtil;
 import lecho.lib.hellocharts.gesture.ZoomType;
 import lecho.lib.hellocharts.listener.ViewportChangeListener;
@@ -40,7 +47,8 @@ import lecho.lib.hellocharts.view.LineChartView;
 import lecho.lib.hellocharts.view.PreviewLineChartView;
 
 public class MainActivity extends AppCompatActivity
-    implements WeightDialogFragment.WeightDialogListener {
+    implements WeightDialogFragment.WeightDialogListener,
+        SetNotificationFragment.NotificationFragmentListener {
 
     private FloatingActionButton fab;
     private TextView mCurrentWeight;
@@ -48,10 +56,15 @@ public class MainActivity extends AppCompatActivity
     private WeightDialogFragment mDialog;
     private Weight mTodayWeight;
 
+
     private LineChartView lineChart;
     private PreviewLineChartView previewLineChart;
     private LineChartData data;
     private LineChartData previewData;
+
+    private ConfigUtil config;
+    private String selectedTimePeriod = null;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,6 +87,8 @@ public class MainActivity extends AppCompatActivity
 
         initCurrentWeight();
         initGraph();
+        config = new ConfigUtil(this);
+        selectedTimePeriod = config.getTimePeriod();
     }
 
     private class ZoomOutAxisChanger implements ViewportChangeListener {
@@ -93,17 +108,19 @@ public class MainActivity extends AppCompatActivity
         public void onViewportChanged(Viewport viewport) {
             int width = (int) viewport.right - (int) viewport.left;
             Log.d("Viewport", "changed to " + width);
-            if(width < 90) {
+            if (width < 90) {
                 data.setAxisXBottom(dateAxis);
-            } else if(width > 90) {
+            } else if (width > 90) {
                 data.setAxisXBottom(monthAxis);
-            } else if(width > 730) {
+            } else if (width > 730) {
                 data.setAxisXBottom(yearAxis);
             }
         }
     }
 
+
     private class ViewportListener implements ViewportChangeListener {
+
 
         @Override
         public void onViewportChanged(Viewport newViewport) {
@@ -257,10 +274,29 @@ public class MainActivity extends AppCompatActivity
         if (id == R.id.action_settings) {
             return true;
         }
-        if (id == R.id.settings_add_test_data) {
-            showSnackbar("TESST");
+        else if (id == R.id.settings_add_test_data) {
+            // Create dummy data.
+            dbService.createDummyEntries();
+            initGraph();
+            updateCurrentWeightText();
+            showSnackbar("Created dummy data!");
+            return true; // why return true?
+        }
+        else if(id == R.id.action_delete_data) {
+            dbService.clearAll();
+            initGraph();
+            updateCurrentWeightText();
+            showSnackbar("Deleted all the data!");
             return true;
         }
+        if (id == R.id.action_set_notification) {
+            SetNotificationFragment dialog = new SetNotificationFragment();
+            dialog.setTime(Math.max(config.getReminderHour(), 0), Math.max(config.getReminderMinute(),0));
+            dialog.show(getFragmentManager(), "wut");
+        }
+
+
+
 
         return super.onOptionsItemSelected(item);
     }
@@ -281,12 +317,13 @@ public class MainActivity extends AppCompatActivity
    //DIALOG LISTENER
     @Override
     public void onDialogPositiveClick(DialogFragment dialog, Date date, double weight) {
-        if (weight==-1) {
+        if (weight <= 0) {
             dbService.deleteEntry(date); //empty input
         } else {
             dbService.putWeightEntry(new Weight(date, weight));
         }
         updateCurrentWeightText();
+        initGraph();
     }
 
     public void onDialogNegativeClick(DialogFragment dialog) {
@@ -300,7 +337,6 @@ public class MainActivity extends AppCompatActivity
 
     //SPINNER ON ITEM CLICK HANDLING
 
-
     //LOGGING
     private void showToast(String msg) {
         Toast.makeText(this, msg, Toast.LENGTH_SHORT).show();
@@ -311,6 +347,19 @@ public class MainActivity extends AppCompatActivity
                 .setAction("Action", null).show();
     }
 
+    @Override
+    public void SetReminder(int hour, int minute) {
+        config.setReminderTime(hour, minute);
+        Log.i("MainActivity", "Reminder time set to " + hour + ":" + minute);
+        //RemoveReminder();
+        new AlarmReceiver().setAlarm(getApplicationContext(), config.getReminderHour(), config.getReminderMinute());
+    }
+
+    @Override
+    public void DisableReminder() {
+        config.setReminderTime(-1, -1);
+        new AlarmReceiver().clearAlarm(getApplicationContext());
+    }
 
 
 }

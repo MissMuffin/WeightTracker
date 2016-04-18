@@ -2,6 +2,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="de.muffinworks.weighttracker.MainActivity">
+
+    <item
+        android:id="@+id/action_set_notification"
+        android:icon="@drawable/ic_alarm_white_24dp"
+        android:title="Notify"
+        app:showAsAction="ifRoom"/>
     <item
         android:id="@+id/action_settings"
         android:orderInCategory="100"
@@ -11,4 +17,9 @@
         android:id="@+id/settings_add_test_data"
         android:title="Test data"
         app:showAsAction="never"/>
+    <item
+        android:id="@+id/action_delete_data"
+        android:title="Delete all data"
+        app:showAsAction="never"/>
+
 </menu>
