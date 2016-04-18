@@ -146,7 +146,7 @@ public class MainActivity extends AppCompatActivity
         }
 
         int maxX = (int) TimeUnit.DAYS.convert(weights.get(weights.size() - 1).getDate().getTime(), TimeUnit.MILLISECONDS);
-        int minX = (int) TimeUnit.DAYS.convert(weights.get(0).getDate().getTime(), TimeUnit.MILLISECONDS);
+        //int minX = (int) TimeUnit.DAYS.convert(weights.get(0).getDate().getTime(), TimeUnit.MILLISECONDS);
 
         List<Column> pillars = new ArrayList<>();
         Calendar c = Calendar.getInstance();
@@ -197,7 +197,6 @@ public class MainActivity extends AppCompatActivity
 
         previewLineChart.setCurrentViewport(new Viewport(maxXb, 110, maxX, 0));
 
-
         // Zoom to latest 31 days
         lineChart.setCurrentViewport(new Viewport(maxXb, 110, maxX, 0));
 
@@ -206,9 +205,6 @@ public class MainActivity extends AppCompatActivity
 
         previewLineChart.setZoomType(ZoomType.HORIZONTAL);
         previewLineChart.setZoomEnabled(true);
-
-        //lineChart.setZoomType(ZoomType.HORIZONTAL);
-        //lineChart.setContainerScrollEnabled(true, ContainerScrollType.HORIZONTAL);
     }
 
     private void setAxisColor(AbstractChartData data, int color) {
