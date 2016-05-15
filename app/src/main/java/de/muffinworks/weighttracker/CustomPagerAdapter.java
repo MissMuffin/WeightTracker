@@ -16,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 import de.muffinworks.weighttracker.db.Weight;
 import de.muffinworks.weighttracker.db.WeightDbService;
 import de.muffinworks.weighttracker.util.DateUtil;
-import lecho.lib.hellocharts.gesture.ZoomType;
 import lecho.lib.hellocharts.listener.ViewportChangeListener;
 import lecho.lib.hellocharts.model.AbstractChartData;
 import lecho.lib.hellocharts.model.Axis;
@@ -26,7 +25,6 @@ import lecho.lib.hellocharts.model.LineChartData;
 import lecho.lib.hellocharts.model.PointValue;
 import lecho.lib.hellocharts.model.Viewport;
 import lecho.lib.hellocharts.view.LineChartView;
-import lecho.lib.hellocharts.view.PreviewLineChartView;
 
 /**
  * Created by Bianca on 18.04.2016.
@@ -41,7 +39,7 @@ public class CustomPagerAdapter extends PagerAdapter {
     public CustomPagerAdapter(Context context) {
         this.mContext = context;
         dbService = new WeightDbService(context);
-        updateGraphs();
+        updateGraphData();
     }
 
     private Axis yearAxis;
@@ -109,7 +107,7 @@ public class CustomPagerAdapter extends PagerAdapter {
     }
 
     // INIT STUFF
-    public void updateGraphs() {
+    public void updateGraphData() {
         List<PointValue> values = new ArrayList<>();
         List<Weight> weights = dbService.getAllEntries();
 
@@ -154,12 +152,10 @@ public class CustomPagerAdapter extends PagerAdapter {
         previewData = new LineChartData(lines);
         previewData.setAxisXBottom(monthAxis);
         previewData.setAxisYLeft(new Axis()
+                .setHasLines(true)
                 .setMaxLabelChars(4));
-        //previewData.setAxisYLeft(null);
 
         setAxisColor(data, R.color.black);
-
-        //SET LINE DATA
 
     }
 
@@ -176,12 +172,14 @@ public class CustomPagerAdapter extends PagerAdapter {
         lineChart.setCurrentViewport(viewport);
         lineChart.setZoomEnabled(false);
         lineChart.setScrollEnabled(false);
+        lineChart.setPadding(10, 10, 10, 10);
     }
 
     private void setAllLineChart(LineChartView previewLineChart) {
         previewLineChart.setLineChartData(previewData);
         previewLineChart.setViewportChangeListener(new ZoomOutAxisChanger(previewData));
         previewLineChart.setCurrentViewport(previewLineChart.getMaximumViewport());
+        previewLineChart.setPadding(10, 10, 10, 10);
     }
 
     private Line createDummyPoints(Date startDate, Date endDate) {

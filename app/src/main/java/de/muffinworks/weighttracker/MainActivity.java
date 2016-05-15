@@ -15,9 +15,7 @@ import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import de.muffinworks.weighttracker.db.Weight;
 import de.muffinworks.weighttracker.db.WeightDbService;
@@ -26,12 +24,6 @@ import de.muffinworks.weighttracker.ui.SetNotificationFragment;
 import de.muffinworks.weighttracker.ui.WeightDialogFragment;
 import de.muffinworks.weighttracker.util.ConfigUtil;
 import de.muffinworks.weighttracker.util.DateUtil;
-import lecho.lib.hellocharts.listener.ViewportChangeListener;
-import lecho.lib.hellocharts.model.Axis;
-import lecho.lib.hellocharts.model.AxisValue;
-import lecho.lib.hellocharts.model.Line;
-import lecho.lib.hellocharts.model.PointValue;
-import lecho.lib.hellocharts.model.Viewport;
 import lecho.lib.hellocharts.view.hack.HackyViewPager;
 
 public class MainActivity extends AppCompatActivity
@@ -43,10 +35,6 @@ public class MainActivity extends AppCompatActivity
     private WeightDbService dbService;
     private WeightDialogFragment mDialog;
     private Weight mTodayWeight;
-
-
-
-
     private ConfigUtil config;
 
     private HackyViewPager viewPager;
@@ -75,21 +63,20 @@ public class MainActivity extends AppCompatActivity
         initCurrentWeight();
 
         config = new ConfigUtil(this);
-        viewPager = (HackyViewPager) findViewById(R.id.viewPager);
-        viewPagerAdapter = new CustomPagerAdapter(this);
-        viewPager.setAdapter(viewPagerAdapter);
         updateGraph();
     }
 
 
-
-
-
-
-
-
     private void updateGraph() {
-        viewPagerAdapter.updateGraphs();
+        /*
+        if(viewPager != null) {
+            viewPager.removeAllViews();
+        }
+        */
+        viewPager = (HackyViewPager) findViewById(R.id.viewPager);
+        viewPagerAdapter = new CustomPagerAdapter(this);
+        viewPager.setAdapter(viewPagerAdapter);
+
     }
 
     //CURRENT WEIGHT STUFF
